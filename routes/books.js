@@ -1,35 +1,4 @@
-[
-  {
-    "title": "La Reina del Sur",
-    "author": "Arturo Perez-Reverte",
-    "rating": 5,
-    "read": false
-  },
-  {
-    "title": "La Herejia",
-    "author": "Romain Sardou",
-    "rating": 5,
-    "read": true
-  },
-  {
-    "title": "Homo Deus",
-    "author": "Yuval Noah Harari",
-    "rating": 5,
-    "read": true
-  },
-  {
-    "title": "Sapiens",
-    "author": "Yuval Noah Harari",
-    "rating": 5,
-    "read": true
-  },
-  {
-    "title": "Sinuhe, el Egipcio",
-    "author": "Mika Waltari",
-    "rating": 5,
-    "read": true
-  }
-]const express = require('express');
+const express = require('express');
 const router = express.Router();
 const pool = require('../config/db');
 
