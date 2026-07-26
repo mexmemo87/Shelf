@@ -14,7 +14,6 @@ app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
 // Seed Database from books.json if Table is Empty
-// Seed Database from books.json if Table is Empty
 async function seedDatabaseFromJSON() {
   try {
     // 1. Create table if it does not exist
@@ -50,3 +49,16 @@ async function seedDatabaseFromJSON() {
     console.error('Migration error:', err);
   }
 }
+
+// Routes
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
+
+app.use('/', bookRoutes);
+
+// Start Server
+app.listen(PORT, async () => {
+  console.log(`Server running at: http://localhost:${PORT}`);
+  await seedDatabaseFromJSON();
+});
