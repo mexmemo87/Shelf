@@ -2,7 +2,7 @@ require('dotenv').config();
 const express = require('express');
 const path = require('path');
 const session = require('express-session');
-const pool = require('./config/db');
+const pool = require('../config/db');
 const bookRoutes = require('./routes/books');
 const authRoutes = require('./routes/auth');
 
