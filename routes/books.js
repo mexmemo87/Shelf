@@ -15,9 +15,15 @@ router.get('/api/books', async (req, res) => {
 
 // Add a New Book
 router.post('/add-book', async (req, res) => {
-  const { title, author } = req.body;
+  const { title, author, rating, read } = req.body;
+  const isRead = read === 'on' || read === 'true' || read === true;
+  const bookRating = parseInt(rating, 10) || 5;
+
   try {
-    await pool.query('INSERT INTO books (title, author) VALUES ($1, $2)', [title, author]);
+    await pool.query(
+      'INSERT INTO books (title, author, rating, read) VALUES ($1, $2, $3, $4)',
+      [title, author, bookRating, isRead]
+    );
     res.redirect('/');
   } catch (err) {
     console.error('Error adding book:', err);

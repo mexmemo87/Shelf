@@ -13,48 +13,49 @@ app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Seed Database from books.json if Table is Empty
+// Seed Database Function
 async function seedDatabaseFromJSON() {
   try {
-    // 1. Create table if it does not exist
+    // 1. Create Books Table with rating and read status
     await pool.query(`
       CREATE TABLE IF NOT EXISTS books (
         id SERIAL PRIMARY KEY,
         title VARCHAR(255) NOT NULL,
-        author VARCHAR(255) NOT NULL
+        author VARCHAR(255) NOT NULL,
+        rating INT DEFAULT 5,
+        read BOOLEAN DEFAULT false
       )
     `);
 
-    // 2. Check book count
-    const checkTable = await pool.query('SELECT COUNT(*) FROM books');
-    const bookCount = parseInt(checkTable.rows[0].count, 10);
+    // Add columns if table already existed without them
+    await pool.query(`ALTER TABLE books ADD COLUMN IF NOT EXISTS rating INT DEFAULT 5;`);
+    await pool.query(`ALTER TABLE books ADD COLUMN IF NOT EXISTS read BOOLEAN DEFAULT false;`);
 
-    // 3. Populate from JSON if table is empty
-    if (bookCount === 0) {
+    // 2. Check if DB is empty
+    const { rows } = await pool.query('SELECT COUNT(*) FROM books');
+    if (parseInt(rows[0].count, 10) === 0) {
+      console.log('Database empty. Seeding initial books from JSON...');
       const jsonPath = path.join(__dirname, 'books.json');
+      
       if (fs.existsSync(jsonPath)) {
         const rawData = fs.readFileSync(jsonPath, 'utf8');
         const books = JSON.parse(rawData);
 
         for (const book of books) {
           await pool.query(
-            'INSERT INTO books (title, author) VALUES ($1, $2)',
-            [book.title, book.author]
+            'INSERT INTO books (title, author, rating, read) VALUES ($1, $2, $3, $4)',
+            [book.title, book.author, book.rating || 5, book.read !== undefined ? book.read : true]
           );
         }
-        console.log(`Successfully migrated ${books.length} books from books.json to PostgreSQL.`);
+        console.log('Seeding complete.');
       }
     }
   } catch (err) {
-    console.error('Migration error:', err);
+    console.error('Database setup/seeding error:', err);
   }
 }
 
 // Routes
-app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'index.html'));
-});
-
 app.use('/', bookRoutes);
 
 // Start Server
