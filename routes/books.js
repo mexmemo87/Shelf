@@ -1,58 +1,70 @@
-require('dotenv').config();
 const express = require('express');
-const path = require('path');
-const session = require('express-session');
+const router = express.Router();
 const pool = require('../config/db');
-const bookRoutes = require('./routes/books');
-const authRoutes = require('./routes/auth');
 
-const app = express();
-const PORT = process.env.PORT || 3000;
-
-app.use(express.urlencoded({ extended: true }));
-app.use(express.json());
-app.use(express.static(path.join(__dirname, 'public')));
-
-app.use(session({
-  secret: process.env.SESSION_SECRET || 'supersecretkey',
-  resave: false,
-  saveUninitialized: false,
-  cookie: { maxAge: 24 * 60 * 60 * 1000 }
-}));
-
-async function setupDatabase() {
-  try {
-    await pool.query(`
-      CREATE TABLE IF NOT EXISTS users (
-        id SERIAL PRIMARY KEY,
-        email VARCHAR(255) UNIQUE NOT NULL,
-        password VARCHAR(255) NOT NULL,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-      )
-    `);
-
-    await pool.query(`
-      CREATE TABLE IF NOT EXISTS books (
-        id SERIAL PRIMARY KEY,
-        title VARCHAR(255) NOT NULL,
-        author VARCHAR(255) NOT NULL,
-        rating INT DEFAULT 5,
-        status VARCHAR(20) DEFAULT 'To Read',
-        user_id INT REFERENCES users(id) ON DELETE CASCADE
-      )
-    `);
-
-    await pool.query(`ALTER TABLE books ADD COLUMN IF NOT EXISTS rating INT DEFAULT 5;`);
-    await pool.query(`ALTER TABLE books ADD COLUMN IF NOT EXISTS status VARCHAR(20) DEFAULT 'To Read';`);
-  } catch (err) {
-    console.error('Database setup error:', err);
+function requireAuth(req, res, next) {
+  if (!req.session.userId) {
+    return res.status(401).json({ error: 'Unauthorized. Please login.' });
   }
+  next();
 }
 
-app.use('/', authRoutes);
-app.use('/', bookRoutes);
-
-app.listen(PORT, async () => {
-  console.log(`Server running at: http://localhost:${PORT}`);
-  await setupDatabase();
+router.get('/api/books', requireAuth, async (req, res) => {
+  try {
+    const result = await pool.query(
+      'SELECT * FROM books WHERE user_id = $1 ORDER BY id ASC',
+      [req.session.userId]
+    );
+    res.json(result.rows);
+  } catch (err) {
+    console.error('Error fetching books:', err);
+    res.status(500).json({ error: 'Database error' });
+  }
 });
+
+router.post('/add-book', requireAuth, async (req, res) => {
+  const { title, author, rating, status } = req.body;
+  const bookRating = parseInt(rating, 10) || 5;
+  const bookStatus = status || 'To Read';
+
+  try {
+    await pool.query(
+      'INSERT INTO books (title, author, rating, status, user_id) VALUES ($1, $2, $3, $4, $5)',
+      [title, author, bookRating, bookStatus, req.session.userId]
+    );
+    res.redirect('/');
+  } catch (err) {
+    console.error('Error adding book:', err);
+    res.status(500).send('Database error');
+  }
+});
+
+router.post('/update-book/:id', requireAuth, async (req, res) => {
+  const { id } = req.params;
+  const { rating, status } = req.body;
+  const bookRating = parseInt(rating, 10);
+
+  try {
+    await pool.query(
+      'UPDATE books SET rating = $1, status = $2 WHERE id = $3 AND user_id = $4',
+      [bookRating, status, id, req.session.userId]
+    );
+    res.json({ success: true });
+  } catch (err) {
+    console.error('Error updating book:', err);
+    res.status(500).json({ error: 'Database error' });
+  }
+});
+
+router.post('/delete-book/:id', requireAuth, async (req, res) => {
+  const { id } = req.params;
+  try {
+    await pool.query('DELETE FROM books WHERE id = $1 AND user_id = $2', [id, req.session.userId]);
+    res.redirect('/');
+  } catch (err) {
+    console.error('Error deleting book:', err);
+    res.status(500).send('Database error');
+  }
+});
+
+module.exports = router;
