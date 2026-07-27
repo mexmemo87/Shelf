@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -94,18 +94,20 @@
 <body>
   <div class="container">
     
+    <!-- AUTHENTICATION FORM -->
     <div id="auth-section" class="auth-card">
-      <h2 id="auth-title">Iniciar Sesión</h2>
-      <input type="email" id="email" placeholder="Correo electrónico" required>
-      <input type="password" id="password" placeholder="Contraseña" required>
-      <button id="auth-submit-btn" onclick="handleAuth('login')">Entrar</button>
-      <button class="secondary" id="auth-toggle-btn" onclick="toggleAuthMode()">¿No tienes cuenta? Regístrate</button>
+      <h2 id="auth-title">Sign In</h2>
+      <input type="email" id="email" placeholder="Email address" required>
+      <input type="password" id="password" placeholder="Password" required>
+      <button id="auth-submit-btn" onclick="handleAuth()">Sign In</button>
+      <button class="secondary" id="auth-toggle-btn" onclick="toggleAuthMode()">Need an account? Sign Up</button>
     </div>
 
+    <!-- MAIN APP DASHBOARD -->
     <div id="app-section" class="hidden">
       <div class="header">
         <h1>Shelf</h1>
-        <button class="btn btn-logout" onclick="logout()">Cerrar Sesión</button>
+        <button class="btn btn-logout" onclick="logout()">Log Out</button>
       </div>
 
       <div class="stats-card">
@@ -141,18 +143,18 @@
 
     function toggleAuthMode() {
       authMode = authMode === 'login' ? 'register' : 'login';
-      document.getElementById('auth-title').textContent = authMode === 'login' ? 'Iniciar Sesión' : 'Crear Cuenta';
-      document.getElementById('auth-submit-btn').textContent = authMode === 'login' ? 'Entrar' : 'Registrarse';
+      document.getElementById('auth-title').textContent = authMode === 'login' ? 'Sign In' : 'Create Account';
+      document.getElementById('auth-submit-btn').textContent = authMode === 'login' ? 'Sign In' : 'Sign Up';
       document.getElementById('auth-toggle-btn').textContent = authMode === 'login' 
-        ? '¿No tienes cuenta? Regístrate' 
-        : '¿Ya tienes cuenta? Inicia sesión';
+        ? 'Need an account? Sign Up' 
+        : 'Already have an account? Sign In';
     }
 
-    async function handleAuth(type) {
+    async function handleAuth() {
       const email = document.getElementById('email').value;
       const password = document.getElementById('password').value;
 
-      if (!email || !password) return alert('Por favor llena todos los campos');
+      if (!email || !password) return alert('Please enter both email and password');
 
       const endpoint = authMode === 'login' ? '/api/login' : '/api/register';
       const res = await fetch(endpoint, {
@@ -165,7 +167,7 @@
       if (res.ok) {
         checkSession();
       } else {
-        alert(data.error || 'Error en la autenticación');
+        alert(data.error || 'Authentication error');
       }
     }
 
