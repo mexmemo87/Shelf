@@ -9,10 +9,12 @@ const authRoutes = require('./routes/auth');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// Middlewares
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
+// Session Configuration
 app.use(session({
   secret: process.env.SESSION_SECRET || 'supersecretkey',
   resave: false,
@@ -20,8 +22,10 @@ app.use(session({
   cookie: { maxAge: 24 * 60 * 60 * 1000 }
 }));
 
+// Setup Database Tables and Migrations
 async function setupDatabase() {
   try {
+    // 1. Create Users Table
     await pool.query(`
       CREATE TABLE IF NOT EXISTS users (
         id SERIAL PRIMARY KEY,
@@ -31,6 +35,7 @@ async function setupDatabase() {
       )
     `);
 
+    // 2. Create Books Table
     await pool.query(`
       CREATE TABLE IF NOT EXISTS books (
         id SERIAL PRIMARY KEY,
@@ -42,16 +47,24 @@ async function setupDatabase() {
       )
     `);
 
+    // Ensure columns exist on older database instances
     await pool.query(`ALTER TABLE books ADD COLUMN IF NOT EXISTS rating INT DEFAULT 5;`);
     await pool.query(`ALTER TABLE books ADD COLUMN IF NOT EXISTS status VARCHAR(20) DEFAULT 'To Read';`);
+    await pool.query(`ALTER TABLE books ADD COLUMN IF NOT EXISTS user_id INT REFERENCES users(id) ON DELETE CASCADE;`);
+
+    // Assign orphaned books to the first registered user
+    await pool.query(`UPDATE books SET user_id = (SELECT id FROM users ORDER BY id ASC LIMIT 1) WHERE user_id IS NULL;`);
+
   } catch (err) {
     console.error('Database setup error:', err);
   }
 }
 
+// Routes
 app.use('/', authRoutes);
 app.use('/', bookRoutes);
 
+// Start Server
 app.listen(PORT, async () => {
   console.log(`Server running at: http://localhost:${PORT}`);
   await setupDatabase();
