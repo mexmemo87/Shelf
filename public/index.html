@@ -8,14 +8,40 @@
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: system-ui, -apple-system, sans-serif; }
     body { background-color: #121212; color: #ffffff; padding: 2rem; display: flex; justify-content: center; }
     .container { max-width: 900px; width: 100%; }
-    h1 { font-size: 2.5rem; margin-bottom: 2rem; }
-    
-    .stats-card {
+    .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; }
+    h1 { font-size: 2.5rem; }
+
+    .auth-card {
       background-color: #1e1e1e;
       border-radius: 8px;
-      padding: 1.5rem;
-      margin-bottom: 2rem;
+      padding: 2rem;
+      max-width: 400px;
+      margin: 4rem auto;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
     }
+    .auth-card h2 { margin-bottom: 0.5rem; text-align: center; }
+    .auth-card input {
+      background-color: #121212;
+      border: 1px solid #333;
+      color: #fff;
+      padding: 0.75rem;
+      border-radius: 6px;
+      outline: none;
+    }
+    .auth-card button {
+      background-color: #0088ff;
+      color: white;
+      border: none;
+      padding: 0.75rem;
+      border-radius: 6px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+    .auth-card button.secondary { background-color: #333; margin-top: 0.5rem; }
+
+    .stats-card { background-color: #1e1e1e; border-radius: 8px; padding: 1.5rem; margin-bottom: 2rem; }
     .stats-card h2 { font-size: 0.8rem; color: #aaa; text-transform: uppercase; margin-bottom: 0.5rem; }
     .stats-card .number { font-size: 2.5rem; font-weight: bold; }
 
@@ -38,96 +64,136 @@
       outline: none;
     }
     .add-book-form input[type="text"] { flex: 2; min-width: 150px; }
-    .add-book-form select { flex: 1; min-width: 100px; }
-    .checkbox-label { display: flex; align-items: center; gap: 0.5rem; color: #ccc; font-size: 0.9rem; cursor: pointer; }
-    .add-book-form button {
-      background-color: #0088ff;
-      color: white;
-      border: none;
-      padding: 0.75rem 1.5rem;
-      border-radius: 6px;
-      font-weight: bold;
-      cursor: pointer;
-    }
-    .add-book-form button:hover { background-color: #0066cc; }
+    .add-book-form select { flex: 1; min-width: 110px; }
+    .btn { background-color: #0088ff; color: white; border: none; padding: 0.75rem 1.5rem; border-radius: 6px; font-weight: bold; cursor: pointer; }
+    .btn-logout { background-color: #333; padding: 0.5rem 1rem; font-size: 0.85rem; }
 
     .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 1.5rem; }
-    .card {
-      background-color: #1e1e1e;
-      border-radius: 8px;
-      padding: 1.5rem;
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
-      gap: 1rem;
-    }
+    .card { background-color: #1e1e1e; border-radius: 8px; padding: 1.5rem; display: flex; flex-direction: column; justify-content: space-between; gap: 1rem; }
     .card h3 { font-size: 1.2rem; }
     .card p { color: #888; font-size: 0.9rem; margin-top: 0.2rem; }
     .card .meta { display: flex; justify-content: space-between; align-items: center; margin-top: 0.5rem; }
     
-    .rating-select {
+    .rating-select, .status-select {
       background-color: #121212;
-      color: #ffca28;
       border: 1px solid #333;
-      padding: 0.2rem 0.4rem;
+      padding: 0.3rem 0.5rem;
       border-radius: 4px;
       outline: none;
       cursor: pointer;
-      font-size: 0.9rem;
-    }
-
-    .badge { font-size: 0.75rem; padding: 0.2rem 0.5rem; border-radius: 4px; font-weight: bold; cursor: pointer; user-select: none; }
-    .badge-read { background-color: #1b5e20; color: #81c784; }
-    .badge-pending { background-color: #4a148c; color: #ce93d8; }
-    
-    .delete-btn {
-      background: none;
-      border: 1px solid #d32f2f;
-      color: #ff6666;
-      padding: 0.4rem 0.8rem;
-      border-radius: 4px;
-      cursor: pointer;
-      align-self: flex-end;
       font-size: 0.85rem;
     }
+    .rating-select { color: #ffca28; }
+    .status-select { color: #81c784; }
+
+    .delete-btn { background: none; border: 1px solid #d32f2f; color: #ff6666; padding: 0.4rem 0.8rem; border-radius: 4px; cursor: pointer; align-self: flex-end; font-size: 0.85rem; }
     .delete-btn:hover { background-color: #d32f2f; color: white; }
+    .hidden { display: none !important; }
   </style>
 </head>
 <body>
   <div class="container">
-    <h1>Shelf</h1>
-
-    <div class="stats-card">
-      <h2>Total Books</h2>
-      <div class="number" id="total-count">0</div>
+    
+    <div id="auth-section" class="auth-card">
+      <h2 id="auth-title">Iniciar Sesión</h2>
+      <input type="email" id="email" placeholder="Correo electrónico" required>
+      <input type="password" id="password" placeholder="Contraseña" required>
+      <button id="auth-submit-btn" onclick="handleAuth('login')">Entrar</button>
+      <button class="secondary" id="auth-toggle-btn" onclick="toggleAuthMode()">¿No tienes cuenta? Regístrate</button>
     </div>
 
-    <form class="add-book-form" action="/add-book" method="POST">
-      <input type="text" name="title" placeholder="Book Title" required>
-      <input type="text" name="author" placeholder="Author" required>
-      <select name="rating">
-        <option value="5">★ 5 Stars</option>
-        <option value="4">★ 4 Stars</option>
-        <option value="3">★ 3 Stars</option>
-        <option value="2">★ 2 Stars</option>
-        <option value="1">★ 1 Star</option>
-      </select>
-      <label class="checkbox-label">
-        <input type="checkbox" name="read" checked> Read
-      </label>
-      <button type="submit">Add Book</button>
-    </form>
+    <div id="app-section" class="hidden">
+      <div class="header">
+        <h1>Shelf</h1>
+        <button class="btn btn-logout" onclick="logout()">Cerrar Sesión</button>
+      </div>
 
-    <div class="grid" id="books-grid"></div>
+      <div class="stats-card">
+        <h2>Total Books</h2>
+        <div class="number" id="total-count">0</div>
+      </div>
+
+      <form class="add-book-form" action="/add-book" method="POST">
+        <input type="text" name="title" placeholder="Book Title" required>
+        <input type="text" name="author" placeholder="Author" required>
+        <select name="rating">
+          <option value="5">★ 5 Stars</option>
+          <option value="4">★ 4 Stars</option>
+          <option value="3">★ 3 Stars</option>
+          <option value="2">★ 2 Stars</option>
+          <option value="1">★ 1 Star</option>
+        </select>
+        <select name="status">
+          <option value="To Read">To Read</option>
+          <option value="Read">Read</option>
+          <option value="Listened">Listened</option>
+        </select>
+        <button type="submit" class="btn">Add Book</button>
+      </form>
+
+      <div class="grid" id="books-grid"></div>
+    </div>
+
   </div>
 
   <script>
-    async function updateBook(id, currentRating, currentReadState) {
+    let authMode = 'login';
+
+    function toggleAuthMode() {
+      authMode = authMode === 'login' ? 'register' : 'login';
+      document.getElementById('auth-title').textContent = authMode === 'login' ? 'Iniciar Sesión' : 'Crear Cuenta';
+      document.getElementById('auth-submit-btn').textContent = authMode === 'login' ? 'Entrar' : 'Registrarse';
+      document.getElementById('auth-toggle-btn').textContent = authMode === 'login' 
+        ? '¿No tienes cuenta? Regístrate' 
+        : '¿Ya tienes cuenta? Inicia sesión';
+    }
+
+    async function handleAuth(type) {
+      const email = document.getElementById('email').value;
+      const password = document.getElementById('password').value;
+
+      if (!email || !password) return alert('Por favor llena todos los campos');
+
+      const endpoint = authMode === 'login' ? '/api/login' : '/api/register';
+      const res = await fetch(endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password })
+      });
+
+      const data = await res.json();
+      if (res.ok) {
+        checkSession();
+      } else {
+        alert(data.error || 'Error en la autenticación');
+      }
+    }
+
+    async function logout() {
+      await fetch('/api/logout', { method: 'POST' });
+      checkSession();
+    }
+
+    async function checkSession() {
+      const res = await fetch('/api/me');
+      const data = await res.json();
+
+      if (data.authenticated) {
+        document.getElementById('auth-section').classList.add('hidden');
+        document.getElementById('app-section').classList.remove('hidden');
+        fetchBooks();
+      } else {
+        document.getElementById('auth-section').classList.remove('hidden');
+        document.getElementById('app-section').classList.add('hidden');
+      }
+    }
+
+    async function updateBook(id, newRating, newStatus) {
       try {
         await fetch(`/update-book/${id}`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ rating: currentRating, read: currentReadState })
+          body: JSON.stringify({ rating: newRating, status: newStatus })
         });
         fetchBooks();
       } catch (err) {
@@ -138,14 +204,16 @@
     async function fetchBooks() {
       try {
         const response = await fetch('/api/books');
+        if (!response.ok) return;
         const books = await response.json();
 
         document.getElementById('total-count').textContent = books.length;
-
         const grid = document.getElementById('books-grid');
         grid.innerHTML = '';
 
         books.forEach(book => {
+          const currentStatus = book.status || (book.read ? 'Read' : 'To Read');
+
           const card = document.createElement('div');
           card.className = 'card';
           card.innerHTML = `
@@ -153,17 +221,18 @@
               <h3>${book.title}</h3>
               <p>by ${book.author}</p>
               <div class="meta">
-                <select class="rating-select" onchange="updateBook(${book.id}, this.value, ${book.read})">
+                <select class="rating-select" onchange="updateBook(${book.id}, this.value, '${currentStatus}')">
                   <option value="5" ${book.rating === 5 ? 'selected' : ''}>★ 5</option>
                   <option value="4" ${book.rating === 4 ? 'selected' : ''}>★ 4</option>
                   <option value="3" ${book.rating === 3 ? 'selected' : ''}>★ 3</option>
                   <option value="2" ${book.rating === 2 ? 'selected' : ''}>★ 2</option>
                   <option value="1" ${book.rating === 1 ? 'selected' : ''}>★ 1</option>
                 </select>
-                <span class="badge ${book.read ? 'badge-read' : 'badge-pending'}" 
-                      onclick="updateBook(${book.id}, ${book.rating || 5}, ${!book.read})">
-                  ${book.read ? 'Read' : 'Pending'}
-                </span>
+                <select class="status-select" onchange="updateBook(${book.id}, ${book.rating || 5}, this.value)">
+                  <option value="To Read" ${currentStatus === 'To Read' ? 'selected' : ''}>To Read</option>
+                  <option value="Read" ${currentStatus === 'Read' ? 'selected' : ''}>Read</option>
+                  <option value="Listened" ${currentStatus === 'Listened' ? 'selected' : ''}>Listened</option>
+                </select>
               </div>
             </div>
             <form action="/delete-book/${book.id}" method="POST" style="margin-top: 1rem;">
@@ -177,7 +246,7 @@
       }
     }
 
-    fetchBooks();
+    checkSession();
   </script>
 </body>
 </html>
