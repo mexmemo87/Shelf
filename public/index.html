@@ -64,8 +64,19 @@
     .card h3 { font-size: 1.2rem; }
     .card p { color: #888; font-size: 0.9rem; margin-top: 0.2rem; }
     .card .meta { display: flex; justify-content: space-between; align-items: center; margin-top: 0.5rem; }
-    .card .stars { color: #ffca28; font-size: 1.1rem; }
-    .badge { font-size: 0.75rem; padding: 0.2rem 0.5rem; border-radius: 4px; font-weight: bold; }
+    
+    .rating-select {
+      background-color: #121212;
+      color: #ffca28;
+      border: 1px solid #333;
+      padding: 0.2rem 0.4rem;
+      border-radius: 4px;
+      outline: none;
+      cursor: pointer;
+      font-size: 0.9rem;
+    }
+
+    .badge { font-size: 0.75rem; padding: 0.2rem 0.5rem; border-radius: 4px; font-weight: bold; cursor: pointer; user-select: none; }
     .badge-read { background-color: #1b5e20; color: #81c784; }
     .badge-pending { background-color: #4a148c; color: #ce93d8; }
     
@@ -111,6 +122,19 @@
   </div>
 
   <script>
+    async function updateBook(id, currentRating, currentReadState) {
+      try {
+        await fetch(`/update-book/${id}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ rating: currentRating, read: currentReadState })
+        });
+        fetchBooks();
+      } catch (err) {
+        console.error('Error updating book:', err);
+      }
+    }
+
     async function fetchBooks() {
       try {
         const response = await fetch('/api/books');
@@ -122,9 +146,6 @@
         grid.innerHTML = '';
 
         books.forEach(book => {
-          const stars = '★'.repeat(book.rating || 5) + '☆'.repeat(5 - (book.rating || 5));
-          const isRead = book.read;
-
           const card = document.createElement('div');
           card.className = 'card';
           card.innerHTML = `
@@ -132,9 +153,16 @@
               <h3>${book.title}</h3>
               <p>by ${book.author}</p>
               <div class="meta">
-                <span class="stars">${stars}</span>
-                <span class="badge ${isRead ? 'badge-read' : 'badge-pending'}">
-                  ${isRead ? 'Read' : 'Pending'}
+                <select class="rating-select" onchange="updateBook(${book.id}, this.value, ${book.read})">
+                  <option value="5" ${book.rating === 5 ? 'selected' : ''}>★ 5</option>
+                  <option value="4" ${book.rating === 4 ? 'selected' : ''}>★ 4</option>
+                  <option value="3" ${book.rating === 3 ? 'selected' : ''}>★ 3</option>
+                  <option value="2" ${book.rating === 2 ? 'selected' : ''}>★ 2</option>
+                  <option value="1" ${book.rating === 1 ? 'selected' : ''}>★ 1</option>
+                </select>
+                <span class="badge ${book.read ? 'badge-read' : 'badge-pending'}" 
+                      onclick="updateBook(${book.id}, ${book.rating || 5}, ${!book.read})">
+                  ${book.read ? 'Read' : 'Pending'}
                 </span>
               </div>
             </div>

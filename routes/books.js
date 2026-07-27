@@ -31,6 +31,25 @@ router.post('/add-book', async (req, res) => {
   }
 });
 
+// Update Book (Rating and Read status)
+router.post('/update-book/:id', async (req, res) => {
+  const { id } = req.params;
+  const { rating, read } = req.body;
+  const isRead = read === 'true' || read === true;
+  const bookRating = parseInt(rating, 10);
+
+  try {
+    await pool.query(
+      'UPDATE books SET rating = $1, read = $2 WHERE id = $3',
+      [bookRating, isRead, id]
+    );
+    res.json({ success: true });
+  } catch (err) {
+    console.error('Error updating book:', err);
+    res.status(500).json({ error: 'Database error' });
+  }
+});
+
 // Delete Book by ID
 router.post('/delete-book/:id', async (req, res) => {
   const { id } = req.params;
