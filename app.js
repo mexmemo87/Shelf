@@ -10,6 +10,9 @@ const authRoutes = require('./routes/auth');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// Trust proxy for production environments (Render, Heroku, etc.)
+app.set('trust proxy', 1);
+
 // Middlewares
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
