@@ -24,9 +24,9 @@ router.get('/api/books', requireAuth, async (req, res) => {
   }
 });
 
-// POST add a new book
+// POST add a new book (Handles manual input directly)
 router.post('/add-book', requireAuth, async (req, res) => {
-  const { title, author, rating, status, language, cover_url } = req.body;
+  const { title, author, rating, status, language } = req.body;
   
   if (!title || !author) {
     return res.status(400).send('Title and Author are required');
@@ -34,15 +34,14 @@ router.post('/add-book', requireAuth, async (req, res) => {
 
   try {
     await pool.query(
-      `INSERT INTO books (title, author, rating, status, language, cover_url, user_id) 
-       VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+      `INSERT INTO books (title, author, rating, status, language, user_id) 
+       VALUES ($1, $2, $3, $4, $5, $6)`,
       [
         title, 
         author, 
         rating || 5, 
         status || 'To Read', 
         language || 'EN', 
-        cover_url || null, 
         req.session.userId
       ]
     );
