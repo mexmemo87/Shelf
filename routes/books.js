@@ -2,17 +2,19 @@ const express = require('express');
 const router = express.Router();
 const pool = require('../config/db');
 
+// Middleware to ensure authentication
 function requireAuth(req, res, next) {
-  if (!req.session.userId) {
-    return res.status(401).json({ error: 'Unauthorized. Please login.' });
+  if (!req.session || !req.session.userId) {
+    return res.status(401).json({ error: 'Unauthorized' });
   }
   next();
 }
 
+// GET all books for authenticated user
 router.get('/api/books', requireAuth, async (req, res) => {
   try {
     const result = await pool.query(
-      'SELECT * FROM books WHERE user_id = $1 ORDER BY id ASC',
+      'SELECT id, title, author, rating, status, language, cover_url FROM books WHERE user_id = $1 ORDER BY id DESC',
       [req.session.userId]
     );
     res.json(result.rows);
@@ -22,15 +24,27 @@ router.get('/api/books', requireAuth, async (req, res) => {
   }
 });
 
+// POST add a new book
 router.post('/add-book', requireAuth, async (req, res) => {
-  const { title, author, rating, status } = req.body;
-  const bookRating = parseInt(rating, 10) || 5;
-  const bookStatus = status || 'To Read';
+  const { title, author, rating, status, language, cover_url } = req.body;
+  
+  if (!title || !author) {
+    return res.status(400).send('Title and Author are required');
+  }
 
   try {
     await pool.query(
-      'INSERT INTO books (title, author, rating, status, user_id) VALUES ($1, $2, $3, $4, $5)',
-      [title, author, bookRating, bookStatus, req.session.userId]
+      `INSERT INTO books (title, author, rating, status, language, cover_url, user_id) 
+       VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+      [
+        title, 
+        author, 
+        rating || 5, 
+        status || 'To Read', 
+        language || 'EN', 
+        cover_url || null, 
+        req.session.userId
+      ]
     );
     res.redirect('/');
   } catch (err) {
@@ -39,15 +53,15 @@ router.post('/add-book', requireAuth, async (req, res) => {
   }
 });
 
+// POST update book rating / status
 router.post('/update-book/:id', requireAuth, async (req, res) => {
   const { id } = req.params;
   const { rating, status } = req.body;
-  const bookRating = parseInt(rating, 10);
 
   try {
     await pool.query(
       'UPDATE books SET rating = $1, status = $2 WHERE id = $3 AND user_id = $4',
-      [bookRating, status, id, req.session.userId]
+      [rating, status, id, req.session.userId]
     );
     res.json({ success: true });
   } catch (err) {
@@ -56,8 +70,10 @@ router.post('/update-book/:id', requireAuth, async (req, res) => {
   }
 });
 
+// POST delete book
 router.post('/delete-book/:id', requireAuth, async (req, res) => {
   const { id } = req.params;
+
   try {
     await pool.query('DELETE FROM books WHERE id = $1 AND user_id = $2', [id, req.session.userId]);
     res.redirect('/');

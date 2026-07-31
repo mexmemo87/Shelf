@@ -233,6 +233,8 @@
           <input type="text" id="author-input" name="author" placeholder="Author" autocomplete="off" required>
         </div>
 
+        <input type="hidden" id="cover-input" name="cover_url">
+
         <select id="lang-input" name="language" style="flex: 0.8; min-width: 100px;">
           <option value="EN">English</option>
           <option value="ES">Español</option>
@@ -338,7 +340,6 @@
       }
     }
 
-    // BUSCADOR A TRAVÉS DE NUESTRO SERVIDOR PROXY
     function triggerSearch(query) {
       clearTimeout(searchDebounce);
       const suggestionsBox = document.getElementById('suggestions');
@@ -369,6 +370,7 @@
               div.onclick = () => {
                 document.getElementById('title-input').value = item.title;
                 document.getElementById('author-input').value = item.author;
+                document.getElementById('cover-input').value = item.cover_url || '';
                 suggestionsBox.classList.add('hidden');
               };
 
@@ -397,17 +399,19 @@
       const language = document.getElementById('lang-input').value;
       const rating = document.getElementById('rating-input').value;
       const status = document.getElementById('status-input').value;
+      const cover_url = document.getElementById('cover-input').value;
 
       try {
         const res = await fetch('/add-book', {
           method: 'POST',
           headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-          body: new URLSearchParams({ title, author, language, rating, status })
+          body: new URLSearchParams({ title, author, language, rating, status, cover_url })
         });
 
         if (res.ok) {
           showToast('Book added successfully!');
           document.getElementById('add-form').reset();
+          document.getElementById('cover-input').value = '';
           fetchBooks();
         }
       } catch (err) {
@@ -465,7 +469,8 @@
         const currentStatus = book.status || (book.read ? 'Read' : 'To Read');
         const encodedTitle = encodeURIComponent(book.title);
         const encodedAuthor = encodeURIComponent(book.author);
-        const coverUrl = `https://placehold.co/400x600/1e1e1e/0088ff?text=${encodedTitle}+%0A+by+${encodedAuthor}`;
+        const fallbackCover = `https://placehold.co/400x600/1e1e1e/0088ff?text=${encodedTitle}+%0A+by+${encodedAuthor}`;
+        const coverUrl = book.cover_url || fallbackCover;
         const bookLang = book.language || 'EN';
 
         const card = document.createElement('div');
@@ -473,7 +478,7 @@
 
         card.innerHTML = `
           <div class="cover-container">
-            <img src="${coverUrl}" alt="${book.title}" class="cover-image" />
+            <img src="${coverUrl}" alt="${book.title}" class="cover-image" onerror="this.onerror=null; this.src='${fallbackCover}';" />
           </div>
           <div class="card-content">
             <div>
@@ -502,6 +507,30 @@
         `;
         grid.appendChild(card);
       });
+    }
+
+    async function fetchBooks() {
+      try {
+        const response = await fetch('/api/books');
+        if (!response.ok) return;
+        allBooks = await response.json();
+
+        // METRICS
+        const total = allBooks.length;
+        const completed = allBooks.filter(b => {
+          const st = b.status || (b.read ? 'Read' : 'To Read');
+          return st === 'Read' || st === 'Listened';
+        }).length;
+        const pending = total - completed;
+
+        document.getElementById('total-count').textContent = total;
+        document.getElementById('completed-count').textContent = completed;
+        document.getElementById('pending-count').textContent = pending;
+
+        filterBooks();
+      } catch (err) {
+        console.error('Error loading books:', err);
+      }
     }
 
     checkSession();
