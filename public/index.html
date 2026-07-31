@@ -52,7 +52,7 @@
     .stats-card h2 { font-size: 0.8rem; color: #aaa; text-transform: uppercase; margin-bottom: 0.5rem; }
     .stats-card .number { font-size: 2.5rem; font-weight: bold; }
 
-    /* ADD BOOK FORM */
+    /* ADD BOOK FORM & AUTOCOMPLETE */
     .add-book-form {
       background-color: #1e1e1e;
       border-radius: 8px;
@@ -63,6 +63,12 @@
       flex-wrap: wrap;
       align-items: center;
       border: 1px solid #2a2a2a;
+      position: relative;
+    }
+    .input-wrapper {
+      position: relative;
+      flex: 2;
+      min-width: 200px;
     }
     .add-book-form input, .add-book-form select, .filter-container input, .filter-container select {
       background-color: #121212;
@@ -71,11 +77,38 @@
       padding: 0.75rem;
       border-radius: 6px;
       outline: none;
+      width: 100%;
     }
-    .add-book-form input[name="title"] { flex: 2; min-width: 180px; }
-    .add-book-form input[name="author"] { flex: 1.5; min-width: 140px; }
     .btn { background-color: #0088ff; color: white; border: none; padding: 0.75rem 1.5rem; border-radius: 6px; font-weight: bold; cursor: pointer; white-space: nowrap; }
     .btn-logout { background-color: #333; padding: 0.5rem 1rem; font-size: 0.85rem; }
+
+    /* SUGGESTIONS FLOATING MENU */
+    .suggestions-box {
+      position: absolute;
+      top: 100%;
+      left: 0;
+      right: 0;
+      background-color: #1e1e1e;
+      border: 1px solid #0088ff;
+      border-radius: 6px;
+      max-height: 250px;
+      overflow-y: auto;
+      z-index: 999;
+      margin-top: 4px;
+      box-shadow: 0 8px 16px rgba(0,0,0,0.8);
+    }
+    .suggestion-item {
+      padding: 0.75rem;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      cursor: pointer;
+      border-bottom: 1px solid #2a2a2a;
+    }
+    .suggestion-item:hover { background-color: #2a2a2a; }
+    .suggestion-item img { width: 35px; height: 50px; object-fit: cover; border-radius: 3px; }
+    .suggestion-title { font-weight: bold; font-size: 0.85rem; color: #fff; }
+    .suggestion-author { font-size: 0.75rem; color: #aaa; }
 
     /* FILTERS */
     .filter-container {
@@ -87,7 +120,7 @@
     .filter-container input { flex: 2; min-width: 200px; }
     .filter-container select { flex: 1; min-width: 140px; }
 
-    /* GRID AND CARDS WITH HOVER */
+    /* GRID AND CARDS */
     .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 1.5rem; }
     .card { 
       background-color: #1e1e1e; 
@@ -99,10 +132,7 @@
       border: 1px solid #2a2a2a;
       transition: transform 0.2s ease, border-color 0.2s ease;
     }
-    .card:hover {
-      transform: translateY(-4px);
-      border-color: #0088ff;
-    }
+    .card:hover { transform: translateY(-4px); border-color: #0088ff; }
     .cover-container {
       width: 100%;
       height: 260px;
@@ -113,19 +143,8 @@
       overflow: hidden;
       border-bottom: 1px solid #2a2a2a;
     }
-    .cover-image {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-    }
-    .card-content {
-      padding: 1.25rem;
-      display: flex;
-      flex-direction: column;
-      gap: 0.8rem;
-      flex-grow: 1;
-      justify-content: space-between;
-    }
+    .cover-image { width: 100%; height: 100%; object-fit: cover; }
+    .card-content { padding: 1.25rem; display: flex; flex-direction: column; gap: 0.8rem; flex-grow: 1; justify-content: space-between; }
     .card h3 { font-size: 1.1rem; line-height: 1.3; }
     .card p { color: #888; font-size: 0.85rem; }
     .lang-badge { display: inline-block; font-size: 0.7rem; background-color: #2a2a2a; color: #0088ff; padding: 0.15rem 0.4rem; border-radius: 3px; margin-top: 0.3rem; font-weight: bold; }
@@ -165,10 +184,7 @@
       z-index: 1000;
       pointer-events: none;
     }
-    #toast.show {
-      opacity: 1;
-      transform: translateY(0);
-    }
+    #toast.show { opacity: 1; transform: translateY(0); }
   </style>
 </head>
 <body>
@@ -206,17 +222,23 @@
         </div>
       </div>
 
-      <!-- ADD BOOK FORM -->
-      <form class="add-book-form" action="/add-book" method="POST" onsubmit="showToast('Book saved!')">
-        <input type="text" name="title" placeholder="Book Title" required>
-        <input type="text" name="author" placeholder="Author" required>
+      <!-- ADD BOOK FORM (JAVASCRIPT INTERCEPTED) -->
+      <form class="add-book-form" id="add-form" onsubmit="handleAddBook(event)">
+        <div class="input-wrapper">
+          <input type="text" id="title-input" name="title" placeholder="Type book title..." autocomplete="new-password" required oninput="triggerGoogleSearch(this.value)">
+          <div id="suggestions" class="suggestions-box hidden"></div>
+        </div>
 
-        <select name="language" style="flex: 0.8; min-width: 100px;">
+        <div class="input-wrapper" style="flex: 1.5; min-width: 140px;">
+          <input type="text" id="author-input" name="author" placeholder="Author" autocomplete="new-password" required>
+        </div>
+
+        <select id="lang-input" name="language" style="flex: 0.8; min-width: 100px;">
           <option value="EN">English</option>
           <option value="ES">Español</option>
         </select>
 
-        <select name="rating" style="flex: 0.8; min-width: 100px;">
+        <select id="rating-input" name="rating" style="flex: 0.8; min-width: 100px;">
           <option value="5">★ 5 Stars</option>
           <option value="4">★ 4 Stars</option>
           <option value="3">★ 3 Stars</option>
@@ -224,7 +246,7 @@
           <option value="1">★ 1 Star</option>
         </select>
 
-        <select name="status" style="flex: 1; min-width: 110px;">
+        <select id="status-input" name="status" style="flex: 1; min-width: 110px;">
           <option value="To Read">To Read</option>
           <option value="Read">Read</option>
           <option value="Listened">Listened</option>
@@ -253,12 +275,12 @@
 
   </div>
 
-  <!-- TOAST CONTAINER -->
   <div id="toast">Message</div>
 
   <script>
     let authMode = 'login';
     let allBooks = [];
+    let searchDebounce = null;
 
     function showToast(msg) {
       const toast = document.getElementById('toast');
@@ -313,6 +335,89 @@
       } else {
         document.getElementById('auth-section').classList.remove('hidden');
         document.getElementById('app-section').classList.add('hidden');
+      }
+    }
+
+    // BUSCADOR EN TIEMPO REAL GOOGLE BOOKS
+    function triggerGoogleSearch(query) {
+      clearTimeout(searchDebounce);
+      const suggestionsBox = document.getElementById('suggestions');
+
+      if (!query || query.trim().length < 3) {
+        suggestionsBox.classList.add('hidden');
+        return;
+      }
+
+      searchDebounce = setTimeout(async () => {
+        try {
+          const res = await fetch(`https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(query)}&maxResults=5`);
+          const data = await res.json();
+
+          if (data.items && data.items.length > 0) {
+            suggestionsBox.innerHTML = '';
+            data.items.forEach(item => {
+              const info = item.volumeInfo;
+              const title = info.title || 'Untitled';
+              const author = info.authors ? info.authors.join(', ') : 'Unknown Author';
+              const img = info.imageLinks?.thumbnail ? info.imageLinks.thumbnail.replace('http://', 'https://') : '';
+
+              const div = document.createElement('div');
+              div.className = 'suggestion-item';
+              div.innerHTML = `
+                ${img ? `<img src="${img}" alt="cover"/>` : '<span style="font-size:1.2rem;">📖</span>'}
+                <div>
+                  <div class="suggestion-title">${title}</div>
+                  <div class="suggestion-author">${author}</div>
+                </div>
+              `;
+
+              div.onclick = () => {
+                document.getElementById('title-input').value = title;
+                document.getElementById('author-input').value = author;
+                suggestionsBox.classList.add('hidden');
+              };
+
+              suggestionsBox.appendChild(div);
+            });
+            suggestionsBox.classList.remove('hidden');
+          } else {
+            suggestionsBox.classList.add('hidden');
+          }
+        } catch (err) {
+          console.error('Error Google Books API:', err);
+        }
+      }, 300);
+    }
+
+    // OCULTAR SUGERENCIAS SI SE HACE CLICK FUERA
+    document.addEventListener('click', (e) => {
+      if (!e.target.closest('.input-wrapper')) {
+        document.getElementById('suggestions').classList.add('hidden');
+      }
+    });
+
+    async function handleAddBook(e) {
+      e.preventDefault();
+      const title = document.getElementById('title-input').value;
+      const author = document.getElementById('author-input').value;
+      const language = document.getElementById('lang-input').value;
+      const rating = document.getElementById('rating-input').value;
+      const status = document.getElementById('status-input').value;
+
+      try {
+        const res = await fetch('/add-book', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          body: new URLSearchParams({ title, author, language, rating, status })
+        });
+
+        if (res.ok) {
+          showToast('Book added successfully!');
+          document.getElementById('add-form').reset();
+          fetchBooks();
+        }
+      } catch (err) {
+        console.error('Error adding book:', err);
       }
     }
 
