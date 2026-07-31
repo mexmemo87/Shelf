@@ -56,13 +56,13 @@
       background-color: #1e1e1e;
       border-radius: 8px;
       padding: 1.5rem;
-      margin-bottom: 2rem;
+      margin-bottom: 1.5rem;
       display: flex;
       gap: 1rem;
       flex-wrap: wrap;
       align-items: center;
     }
-    .add-book-form input, .add-book-form select {
+    .add-book-form input, .add-book-form select, .filter-container input, .filter-container select {
       background-color: #121212;
       border: 1px solid #333;
       color: #fff;
@@ -74,6 +74,16 @@
     .add-book-form select { flex: 1; min-width: 110px; }
     .btn { background-color: #0088ff; color: white; border: none; padding: 0.75rem 1.5rem; border-radius: 6px; font-weight: bold; cursor: pointer; }
     .btn-logout { background-color: #333; padding: 0.5rem 1rem; font-size: 0.85rem; }
+
+    /* BARRA DE BÚSQUEDA Y FILTROS */
+    .filter-container {
+      display: flex;
+      gap: 1rem;
+      margin-bottom: 2rem;
+      flex-wrap: wrap;
+    }
+    .filter-container input { flex: 2; min-width: 200px; }
+    .filter-container select { flex: 1; min-width: 150px; }
 
     /* GRID AND CARDS */
     .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 1.5rem; }
@@ -165,6 +175,7 @@
         </div>
       </div>
 
+      <!-- ADD BOOK FORM -->
       <form class="add-book-form" action="/add-book" method="POST">
         <input type="text" name="title" placeholder="Book Title" required>
         <input type="text" name="author" placeholder="Author" required>
@@ -183,6 +194,16 @@
         <button type="submit" class="btn">Add Book</button>
       </form>
 
+      <!-- LIVE SEARCH & FILTERS -->
+      <div class="filter-container">
+        <input type="text" id="search-input" placeholder="Search by title or author..." oninput="filterBooks()">
+        <select id="status-filter" onchange="filterBooks()">
+          <option value="ALL">All Statuses</option>
+          <option value="To Read">To Read</option>
+          <option value="COMPLETED">Read / Listened</option>
+        </select>
+      </div>
+
       <div class="grid" id="books-grid"></div>
     </div>
 
@@ -190,6 +211,7 @@
 
   <script>
     let authMode = 'login';
+    let allBooks = [];
 
     function toggleAuthMode() {
       authMode = authMode === 'login' ? 'register' : 'login';
@@ -253,15 +275,81 @@
       }
     }
 
+    function filterBooks() {
+      const query = document.getElementById('search-input').value.toLowerCase().trim();
+      const statusFilter = document.getElementById('status-filter').value;
+
+      const filtered = allBooks.filter(book => {
+        const currentStatus = book.status || (book.read ? 'Read' : 'To Read');
+        const matchesQuery = book.title.toLowerCase().includes(query) || book.author.toLowerCase().includes(query);
+        
+        let matchesStatus = true;
+        if (statusFilter === 'To Read') {
+          matchesStatus = currentStatus === 'To Read';
+        } else if (statusFilter === 'COMPLETED') {
+          matchesStatus = currentStatus === 'Read' || currentStatus === 'Listened';
+        }
+
+        return matchesQuery && matchesStatus;
+      });
+
+      renderGrid(filtered);
+    }
+
+    function renderGrid(booksToRender) {
+      const grid = document.getElementById('books-grid');
+      grid.innerHTML = '';
+
+      booksToRender.forEach(book => {
+        const currentStatus = book.status || (book.read ? 'Read' : 'To Read');
+        const encodedTitle = encodeURIComponent(book.title);
+        const encodedAuthor = encodeURIComponent(book.author);
+        const coverUrl = `https://placehold.co/400x600/1e1e1e/0088ff?text=${encodedTitle}+%0A+by+${encodedAuthor}`;
+
+        const card = document.createElement('div');
+        card.className = 'card';
+
+        card.innerHTML = `
+          <div class="cover-container">
+            <img src="${coverUrl}" alt="${book.title}" class="cover-image" />
+          </div>
+          <div class="card-content">
+            <div>
+              <h3>${book.title}</h3>
+              <p>by ${book.author}</p>
+            </div>
+            <div class="meta">
+              <select class="rating-select" onchange="updateBook(${book.id}, this.value, '${currentStatus}')">
+                <option value="5" ${book.rating === 5 ? 'selected' : ''}>★ 5</option>
+                <option value="4" ${book.rating === 4 ? 'selected' : ''}>★ 4</option>
+                <option value="3" ${book.rating === 3 ? 'selected' : ''}>★ 3</option>
+                <option value="2" ${book.rating === 2 ? 'selected' : ''}>★ 2</option>
+                <option value="1" ${book.rating === 1 ? 'selected' : ''}>★ 1</option>
+              </select>
+              <select class="status-select" onchange="updateBook(${book.id}, ${book.rating || 5}, this.value)">
+                <option value="To Read" ${currentStatus === 'To Read' ? 'selected' : ''}>To Read</option>
+                <option value="Read" ${currentStatus === 'Read' ? 'selected' : ''}>Read</option>
+                <option value="Listened" ${currentStatus === 'Listened' ? 'selected' : ''}>Listened</option>
+              </select>
+            </div>
+            <form action="/delete-book/${book.id}" method="POST" style="margin-top: 0.5rem;">
+              <button type="submit" class="delete-btn">Delete</button>
+            </form>
+          </div>
+        `;
+        grid.appendChild(card);
+      });
+    }
+
     async function fetchBooks() {
       try {
         const response = await fetch('/api/books');
         if (!response.ok) return;
-        const books = await response.json();
+        allBooks = await response.json();
 
         // METRICS
-        const total = books.length;
-        const completed = books.filter(b => {
+        const total = allBooks.length;
+        const completed = allBooks.filter(b => {
           const st = b.status || (b.read ? 'Read' : 'To Read');
           return st === 'Read' || st === 'Listened';
         }).length;
@@ -271,50 +359,7 @@
         document.getElementById('completed-count').textContent = completed;
         document.getElementById('pending-count').textContent = pending;
 
-        const grid = document.getElementById('books-grid');
-        grid.innerHTML = '';
-
-        books.forEach(book => {
-          const currentStatus = book.status || (book.read ? 'Read' : 'To Read');
-          
-          // Genera una portada tipográfica elegante usando un CDN directo
-          const encodedTitle = encodeURIComponent(book.title);
-          const encodedAuthor = encodeURIComponent(book.author);
-          const coverUrl = `https://placehold.co/400x600/1e1e1e/0088ff?text=${encodedTitle}+%0A+by+${encodedAuthor}`;
-
-          const card = document.createElement('div');
-          card.className = 'card';
-
-          card.innerHTML = `
-            <div class="cover-container">
-              <img src="${coverUrl}" alt="${book.title}" class="cover-image" />
-            </div>
-            <div class="card-content">
-              <div>
-                <h3>${book.title}</h3>
-                <p>by ${book.author}</p>
-              </div>
-              <div class="meta">
-                <select class="rating-select" onchange="updateBook(${book.id}, this.value, '${currentStatus}')">
-                  <option value="5" ${book.rating === 5 ? 'selected' : ''}>★ 5</option>
-                  <option value="4" ${book.rating === 4 ? 'selected' : ''}>★ 4</option>
-                  <option value="3" ${book.rating === 3 ? 'selected' : ''}>★ 3</option>
-                  <option value="2" ${book.rating === 2 ? 'selected' : ''}>★ 2</option>
-                  <option value="1" ${book.rating === 1 ? 'selected' : ''}>★ 1</option>
-                </select>
-                <select class="status-select" onchange="updateBook(${book.id}, ${book.rating || 5}, this.value)">
-                  <option value="To Read" ${currentStatus === 'To Read' ? 'selected' : ''}>To Read</option>
-                  <option value="Read" ${currentStatus === 'Read' ? 'selected' : ''}>Read</option>
-                  <option value="Listened" ${currentStatus === 'Listened' ? 'selected' : ''}>Listened</option>
-                </select>
-              </div>
-              <form action="/delete-book/${book.id}" method="POST" style="margin-top: 0.5rem;">
-                <button type="submit" class="delete-btn">Delete</button>
-              </form>
-            </div>
-          `;
-          grid.appendChild(card);
-        });
+        filterBooks();
       } catch (err) {
         console.error('Error loading books:', err);
       }
