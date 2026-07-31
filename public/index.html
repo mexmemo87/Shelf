@@ -41,7 +41,7 @@
     }
     .auth-card button.secondary { background-color: #333; margin-top: 0.5rem; }
 
-    /* DASHBOARD DE MÉTRICAS */
+    /* METRICS DASHBOARD */
     .stats-container {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -75,7 +75,7 @@
     .btn { background-color: #0088ff; color: white; border: none; padding: 0.75rem 1.5rem; border-radius: 6px; font-weight: bold; cursor: pointer; }
     .btn-logout { background-color: #333; padding: 0.5rem 1rem; font-size: 0.85rem; }
 
-    /* GRILLA Y TARJETAS CON PORTADAS */
+    /* GRID AND CARDS WITH COVERS */
     .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 1.5rem; }
     .card { 
       background-color: #1e1e1e; 
@@ -153,7 +153,7 @@
         <button class="btn btn-logout" onclick="logout()">Log Out</button>
       </div>
 
-      <!-- DASHBOARD TRIPLE MÉTRICA -->
+      <!-- TRIPLE METRICS DASHBOARD -->
       <div class="stats-container">
         <div class="stats-card">
           <h2>Total Books</h2>
@@ -257,19 +257,22 @@
       }
     }
 
-    // FUNCIÓN PARA OBTENER PORTADA DESDE GOOGLE BOOKS API
+    // FETCH COVER FROM GOOGLE BOOKS API
     async function fetchCoverUrl(title, author) {
       try {
-        const query = encodeURIComponent(`intitle:${title}+inauthor:${author}`);
+        const query = encodeURIComponent(`${title} ${author}`);
         const res = await fetch(`https://www.googleapis.com/books/v1/volumes?q=${query}&maxResults=1`);
         const data = await res.json();
         
-        if (data.items && data.items[0]?.volumeInfo?.imageLinks?.thumbnail) {
-          // Reemplazamos http por https para evitar advertencias de seguridad
-          return data.items[0].volumeInfo.imageLinks.thumbnail.replace('http://', 'https://');
+        if (data.items && data.items[0]?.volumeInfo?.imageLinks) {
+          const links = data.items[0].volumeInfo.imageLinks;
+          let img = links.thumbnail || links.smallThumbnail;
+          if (img) {
+            return img.replace('http://', 'https://');
+          }
         }
       } catch (err) {
-        console.error('Error fetching cover:', err);
+        console.error('Error fetching Google cover:', err);
       }
       return null;
     }
@@ -280,7 +283,7 @@
         if (!response.ok) return;
         const books = await response.json();
 
-        // CÁLCULO DE MÉTRICAS
+        // CALCULATE METRICS
         const total = books.length;
         const completed = books.filter(b => {
           const st = b.status || (b.read ? 'Read' : 'To Read');
