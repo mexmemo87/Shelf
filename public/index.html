@@ -222,15 +222,15 @@
         </div>
       </div>
 
-      <!-- ADD BOOK FORM (JAVASCRIPT INTERCEPTED) -->
+      <!-- ADD BOOK FORM -->
       <form class="add-book-form" id="add-form" onsubmit="handleAddBook(event)">
         <div class="input-wrapper">
-          <input type="text" id="title-input" name="title" placeholder="Type book title..." autocomplete="new-password" required oninput="triggerGoogleSearch(this.value)">
+          <input type="text" id="title-input" name="title" placeholder="Type book title..." autocomplete="off" required oninput="triggerSearch(this.value)">
           <div id="suggestions" class="suggestions-box hidden"></div>
         </div>
 
         <div class="input-wrapper" style="flex: 1.5; min-width: 140px;">
-          <input type="text" id="author-input" name="author" placeholder="Author" autocomplete="new-password" required>
+          <input type="text" id="author-input" name="author" placeholder="Author" autocomplete="off" required>
         </div>
 
         <select id="lang-input" name="language" style="flex: 0.8; min-width: 100px;">
@@ -338,8 +338,8 @@
       }
     }
 
-    // BUSCADOR EN TIEMPO REAL GOOGLE BOOKS
-    function triggerGoogleSearch(query) {
+    // BUSCADOR A TRAVÉS DE NUESTRO SERVIDOR PROXY
+    function triggerSearch(query) {
       clearTimeout(searchDebounce);
       const suggestionsBox = document.getElementById('suggestions');
 
@@ -350,30 +350,25 @@
 
       searchDebounce = setTimeout(async () => {
         try {
-          const res = await fetch(`https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(query)}&maxResults=5`);
-          const data = await res.json();
+          const res = await fetch(`/api/search-books?q=${encodeURIComponent(query)}`);
+          const results = await res.json();
 
-          if (data.items && data.items.length > 0) {
+          if (results && results.length > 0) {
             suggestionsBox.innerHTML = '';
-            data.items.forEach(item => {
-              const info = item.volumeInfo;
-              const title = info.title || 'Untitled';
-              const author = info.authors ? info.authors.join(', ') : 'Unknown Author';
-              const img = info.imageLinks?.thumbnail ? info.imageLinks.thumbnail.replace('http://', 'https://') : '';
-
+            results.forEach(item => {
               const div = document.createElement('div');
               div.className = 'suggestion-item';
               div.innerHTML = `
-                ${img ? `<img src="${img}" alt="cover"/>` : '<span style="font-size:1.2rem;">📖</span>'}
+                ${item.cover_url ? `<img src="${item.cover_url}" alt="cover"/>` : '<span style="font-size:1.2rem;">📖</span>'}
                 <div>
-                  <div class="suggestion-title">${title}</div>
-                  <div class="suggestion-author">${author}</div>
+                  <div class="suggestion-title">${item.title}</div>
+                  <div class="suggestion-author">${item.author}</div>
                 </div>
               `;
 
               div.onclick = () => {
-                document.getElementById('title-input').value = title;
-                document.getElementById('author-input').value = author;
+                document.getElementById('title-input').value = item.title;
+                document.getElementById('author-input').value = item.author;
                 suggestionsBox.classList.add('hidden');
               };
 
@@ -384,12 +379,11 @@
             suggestionsBox.classList.add('hidden');
           }
         } catch (err) {
-          console.error('Error Google Books API:', err);
+          console.error('Error fetching books from backend proxy:', err);
         }
       }, 300);
     }
 
-    // OCULTAR SUGERENCIAS SI SE HACE CLICK FUERA
     document.addEventListener('click', (e) => {
       if (!e.target.closest('.input-wrapper')) {
         document.getElementById('suggestions').classList.add('hidden');
@@ -508,30 +502,6 @@
         `;
         grid.appendChild(card);
       });
-    }
-
-    async function fetchBooks() {
-      try {
-        const response = await fetch('/api/books');
-        if (!response.ok) return;
-        allBooks = await response.json();
-
-        // METRICS
-        const total = allBooks.length;
-        const completed = allBooks.filter(b => {
-          const st = b.status || (b.read ? 'Read' : 'To Read');
-          return st === 'Read' || st === 'Listened';
-        }).length;
-        const pending = total - completed;
-
-        document.getElementById('total-count').textContent = total;
-        document.getElementById('completed-count').textContent = completed;
-        document.getElementById('pending-count').textContent = pending;
-
-        filterBooks();
-      } catch (err) {
-        console.error('Error loading books:', err);
-      }
     }
 
     checkSession();

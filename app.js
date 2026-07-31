@@ -56,6 +56,8 @@ async function setupDatabase() {
         author VARCHAR(255) NOT NULL,
         rating INT DEFAULT 5,
         status VARCHAR(20) DEFAULT 'To Read',
+        language VARCHAR(10) DEFAULT 'EN',
+        cover_url TEXT,
         user_id INT REFERENCES users(id) ON DELETE CASCADE
       )
     `);
@@ -63,6 +65,8 @@ async function setupDatabase() {
     // Ensure columns exist on older database instances
     await pool.query(`ALTER TABLE books ADD COLUMN IF NOT EXISTS rating INT DEFAULT 5;`);
     await pool.query(`ALTER TABLE books ADD COLUMN IF NOT EXISTS status VARCHAR(20) DEFAULT 'To Read';`);
+    await pool.query(`ALTER TABLE books ADD COLUMN IF NOT EXISTS language VARCHAR(10) DEFAULT 'EN';`);
+    await pool.query(`ALTER TABLE books ADD COLUMN IF NOT EXISTS cover_url TEXT;`);
     await pool.query(`ALTER TABLE books ADD COLUMN IF NOT EXISTS user_id INT REFERENCES users(id) ON DELETE CASCADE;`);
 
     // Assign orphaned books to the first registered user
@@ -72,6 +76,36 @@ async function setupDatabase() {
     console.error('Database setup error:', err);
   }
 }
+
+// GOOGLE BOOKS PROXY SEARCH (Bypasses client-side CORS restriction)
+app.get('/api/search-books', async (req, res) => {
+  const query = req.query.q;
+  if (!query) return res.json([]);
+
+  try {
+    const response = await fetch(`https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(query)}&maxResults=5`);
+    const data = await response.json();
+
+    if (!data.items) return res.json([]);
+
+    const results = data.items.map(item => {
+      const info = item.volumeInfo;
+      let cover = info.imageLinks?.thumbnail || info.imageLinks?.smallThumbnail || '';
+      if (cover) cover = cover.replace('http://', 'https://');
+
+      return {
+        title: info.title || 'Untitled',
+        author: info.authors ? info.authors.join(', ') : 'Unknown Author',
+        cover_url: cover
+      };
+    });
+
+    res.json(results);
+  } catch (err) {
+    console.error('Error in book search proxy:', err);
+    res.status(500).json({ error: 'Failed to search books' });
+  }
+});
 
 // Routes
 app.use('/', authRoutes);
