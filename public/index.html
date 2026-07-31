@@ -7,7 +7,7 @@
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: system-ui, -apple-system, sans-serif; }
     body { background-color: #121212; color: #ffffff; padding: 2rem; display: flex; justify-content: center; }
-    .container { max-width: 900px; width: 100%; }
+    .container { max-width: 950px; width: 100%; }
     .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; }
     h1 { font-size: 2.5rem; }
 
@@ -75,10 +75,46 @@
     .btn { background-color: #0088ff; color: white; border: none; padding: 0.75rem 1.5rem; border-radius: 6px; font-weight: bold; cursor: pointer; }
     .btn-logout { background-color: #333; padding: 0.5rem 1rem; font-size: 0.85rem; }
 
-    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 1.5rem; }
-    .card { background-color: #1e1e1e; border-radius: 8px; padding: 1.5rem; display: flex; flex-direction: column; justify-content: space-between; gap: 1rem; }
-    .card h3 { font-size: 1.2rem; }
-    .card p { color: #888; font-size: 0.9rem; margin-top: 0.2rem; }
+    /* GRILLA Y TARJETAS CON PORTADAS */
+    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 1.5rem; }
+    .card { 
+      background-color: #1e1e1e; 
+      border-radius: 8px; 
+      overflow: hidden;
+      display: flex; 
+      flex-direction: column; 
+      justify-content: space-between; 
+      border: 1px solid #2a2a2a;
+    }
+    .cover-container {
+      width: 100%;
+      height: 220px;
+      background-color: #121212;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      border-bottom: 1px solid #2a2a2a;
+    }
+    .cover-image {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    .cover-placeholder {
+      color: #444;
+      font-size: 3rem;
+    }
+    .card-content {
+      padding: 1.25rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.8rem;
+      flex-grow: 1;
+      justify-content: space-between;
+    }
+    .card h3 { font-size: 1.1rem; line-height: 1.3; }
+    .card p { color: #888; font-size: 0.85rem; }
     .card .meta { display: flex; justify-content: space-between; align-items: center; margin-top: 0.5rem; }
     
     .rating-select, .status-select {
@@ -221,6 +257,23 @@
       }
     }
 
+    // FUNCIÓN PARA OBTENER PORTADA DESDE GOOGLE BOOKS API
+    async function fetchCoverUrl(title, author) {
+      try {
+        const query = encodeURIComponent(`intitle:${title}+inauthor:${author}`);
+        const res = await fetch(`https://www.googleapis.com/books/v1/volumes?q=${query}&maxResults=1`);
+        const data = await res.json();
+        
+        if (data.items && data.items[0]?.volumeInfo?.imageLinks?.thumbnail) {
+          // Reemplazamos http por https para evitar advertencias de seguridad
+          return data.items[0].volumeInfo.imageLinks.thumbnail.replace('http://', 'https://');
+        }
+      } catch (err) {
+        console.error('Error fetching cover:', err);
+      }
+      return null;
+    }
+
     async function fetchBooks() {
       try {
         const response = await fetch('/api/books');
@@ -235,7 +288,6 @@
         }).length;
         const pending = total - completed;
 
-        // ACTUALIZACIÓN DE CONTADORES EN PANTALLA
         document.getElementById('total-count').textContent = total;
         document.getElementById('completed-count').textContent = completed;
         document.getElementById('pending-count').textContent = pending;
@@ -243,15 +295,24 @@
         const grid = document.getElementById('books-grid');
         grid.innerHTML = '';
 
-        books.forEach(book => {
+        for (const book of books) {
           const currentStatus = book.status || (book.read ? 'Read' : 'To Read');
+          const coverUrl = await fetchCoverUrl(book.title, book.author);
 
           const card = document.createElement('div');
           card.className = 'card';
+          
+          const coverHTML = coverUrl 
+            ? `<div class="cover-container"><img src="${coverUrl}" alt="${book.title}" class="cover-image" /></div>`
+            : `<div class="cover-container"><span class="cover-placeholder">📖</span></div>`;
+
           card.innerHTML = `
-            <div>
-              <h3>${book.title}</h3>
-              <p>by ${book.author}</p>
+            ${coverHTML}
+            <div class="card-content">
+              <div>
+                <h3>${book.title}</h3>
+                <p>by ${book.author}</p>
+              </div>
               <div class="meta">
                 <select class="rating-select" onchange="updateBook(${book.id}, this.value, '${currentStatus}')">
                   <option value="5" ${book.rating === 5 ? 'selected' : ''}>★ 5</option>
@@ -266,13 +327,13 @@
                   <option value="Listened" ${currentStatus === 'Listened' ? 'selected' : ''}>Listened</option>
                 </select>
               </div>
+              <form action="/delete-book/${book.id}" method="POST" style="margin-top: 0.5rem;">
+                <button type="submit" class="delete-btn">Delete</button>
+              </form>
             </div>
-            <form action="/delete-book/${book.id}" method="POST" style="margin-top: 1rem;">
-              <button type="submit" class="delete-btn">Delete</button>
-            </form>
           `;
           grid.appendChild(card);
-        });
+        }
       } catch (err) {
         console.error('Error loading books:', err);
       }
