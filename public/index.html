@@ -41,7 +41,14 @@
     }
     .auth-card button.secondary { background-color: #333; margin-top: 0.5rem; }
 
-    .stats-card { background-color: #1e1e1e; border-radius: 8px; padding: 1.5rem; margin-bottom: 2rem; }
+    /* DASHBOARD DE MÉTRICAS */
+    .stats-container {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1rem;
+      margin-bottom: 2rem;
+    }
+    .stats-card { background-color: #1e1e1e; border-radius: 8px; padding: 1.5rem; }
     .stats-card h2 { font-size: 0.8rem; color: #aaa; text-transform: uppercase; margin-bottom: 0.5rem; }
     .stats-card .number { font-size: 2.5rem; font-weight: bold; }
 
@@ -110,9 +117,20 @@
         <button class="btn btn-logout" onclick="logout()">Log Out</button>
       </div>
 
-      <div class="stats-card">
-        <h2>Total Books</h2>
-        <div class="number" id="total-count">0</div>
+      <!-- DASHBOARD TRIPLE MÉTRICA -->
+      <div class="stats-container">
+        <div class="stats-card">
+          <h2>Total Books</h2>
+          <div class="number" id="total-count">0</div>
+        </div>
+        <div class="stats-card">
+          <h2>Read / Listened</h2>
+          <div class="number" id="completed-count">0</div>
+        </div>
+        <div class="stats-card">
+          <h2>To Read</h2>
+          <div class="number" id="pending-count">0</div>
+        </div>
       </div>
 
       <form class="add-book-form" action="/add-book" method="POST">
@@ -209,7 +227,19 @@
         if (!response.ok) return;
         const books = await response.json();
 
-        document.getElementById('total-count').textContent = books.length;
+        // CÁLCULO DE MÉTRICAS
+        const total = books.length;
+        const completed = books.filter(b => {
+          const st = b.status || (b.read ? 'Read' : 'To Read');
+          return st === 'Read' || st === 'Listened';
+        }).length;
+        const pending = total - completed;
+
+        // ACTUALIZACIÓN DE CONTADORES EN PANTALLA
+        document.getElementById('total-count').textContent = total;
+        document.getElementById('completed-count').textContent = completed;
+        document.getElementById('pending-count').textContent = pending;
+
         const grid = document.getElementById('books-grid');
         grid.innerHTML = '';
 
@@ -252,4 +282,3 @@
   </script>
 </body>
 </html>
-<!-- PR Test -->
