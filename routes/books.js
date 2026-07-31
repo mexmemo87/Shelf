@@ -14,7 +14,7 @@ function requireAuth(req, res, next) {
 router.get('/api/books', requireAuth, async (req, res) => {
   try {
     const result = await pool.query(
-      'SELECT id, title, author, rating, status, language, cover_url FROM books WHERE user_id = $1 ORDER BY id DESC',
+      'SELECT id, title, author, rating, status, language FROM books WHERE user_id = $1 ORDER BY id DESC',
       [req.session.userId]
     );
     res.json(result.rows);
@@ -24,7 +24,7 @@ router.get('/api/books', requireAuth, async (req, res) => {
   }
 });
 
-// POST add a new book (Handles manual input directly)
+// POST add a new book
 router.post('/add-book', requireAuth, async (req, res) => {
   const { title, author, rating, status, language } = req.body;
   

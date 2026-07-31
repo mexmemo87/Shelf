@@ -52,7 +52,7 @@
     .stats-card h2 { font-size: 0.8rem; color: #aaa; text-transform: uppercase; margin-bottom: 0.5rem; }
     .stats-card .number { font-size: 2.5rem; font-weight: bold; }
 
-    /* ADD BOOK FORM & AUTOCOMPLETE */
+    /* ADD BOOK FORM */
     .add-book-form {
       background-color: #1e1e1e;
       border-radius: 8px;
@@ -63,12 +63,6 @@
       flex-wrap: wrap;
       align-items: center;
       border: 1px solid #2a2a2a;
-      position: relative;
-    }
-    .input-wrapper {
-      position: relative;
-      flex: 2;
-      min-width: 200px;
     }
     .add-book-form input, .add-book-form select, .filter-container input, .filter-container select {
       background-color: #121212;
@@ -77,38 +71,11 @@
       padding: 0.75rem;
       border-radius: 6px;
       outline: none;
-      width: 100%;
     }
+    .add-book-form input[name="title"] { flex: 2; min-width: 180px; }
+    .add-book-form input[name="author"] { flex: 1.5; min-width: 140px; }
     .btn { background-color: #0088ff; color: white; border: none; padding: 0.75rem 1.5rem; border-radius: 6px; font-weight: bold; cursor: pointer; white-space: nowrap; }
     .btn-logout { background-color: #333; padding: 0.5rem 1rem; font-size: 0.85rem; }
-
-    /* SUGGESTIONS FLOATING MENU */
-    .suggestions-box {
-      position: absolute;
-      top: 100%;
-      left: 0;
-      right: 0;
-      background-color: #1e1e1e;
-      border: 1px solid #0088ff;
-      border-radius: 6px;
-      max-height: 250px;
-      overflow-y: auto;
-      z-index: 999;
-      margin-top: 4px;
-      box-shadow: 0 8px 16px rgba(0,0,0,0.8);
-    }
-    .suggestion-item {
-      padding: 0.75rem;
-      display: flex;
-      align-items: center;
-      gap: 0.75rem;
-      cursor: pointer;
-      border-bottom: 1px solid #2a2a2a;
-    }
-    .suggestion-item:hover { background-color: #2a2a2a; }
-    .suggestion-item img { width: 35px; height: 50px; object-fit: cover; border-radius: 3px; }
-    .suggestion-title { font-weight: bold; font-size: 0.85rem; color: #fff; }
-    .suggestion-author { font-size: 0.75rem; color: #aaa; }
 
     /* FILTERS */
     .filter-container {
@@ -166,7 +133,6 @@
     .delete-btn:hover { background-color: #d32f2f; color: white; }
     .hidden { display: none !important; }
 
-    /* TOAST NOTIFICATIONS */
     #toast {
       position: fixed;
       bottom: 20px;
@@ -223,24 +189,16 @@
       </div>
 
       <!-- ADD BOOK FORM -->
-      <form class="add-book-form" id="add-form" onsubmit="handleAddBook(event)">
-        <div class="input-wrapper">
-          <input type="text" id="title-input" name="title" placeholder="Type book title..." autocomplete="off" required oninput="triggerSearch(this.value)">
-          <div id="suggestions" class="suggestions-box hidden"></div>
-        </div>
+      <form class="add-book-form" action="/add-book" method="POST" onsubmit="showToast('Book saved!')">
+        <input type="text" name="title" placeholder="Book Title" required>
+        <input type="text" name="author" placeholder="Author" required>
 
-        <div class="input-wrapper" style="flex: 1.5; min-width: 140px;">
-          <input type="text" id="author-input" name="author" placeholder="Author" autocomplete="off" required>
-        </div>
-
-        <input type="hidden" id="cover-input" name="cover_url">
-
-        <select id="lang-input" name="language" style="flex: 0.8; min-width: 100px;">
+        <select name="language" style="flex: 0.8; min-width: 100px;">
           <option value="EN">English</option>
           <option value="ES">Español</option>
         </select>
 
-        <select id="rating-input" name="rating" style="flex: 0.8; min-width: 100px;">
+        <select name="rating" style="flex: 0.8; min-width: 100px;">
           <option value="5">★ 5 Stars</option>
           <option value="4">★ 4 Stars</option>
           <option value="3">★ 3 Stars</option>
@@ -248,7 +206,7 @@
           <option value="1">★ 1 Star</option>
         </select>
 
-        <select id="status-input" name="status" style="flex: 1; min-width: 110px;">
+        <select name="status" style="flex: 1; min-width: 110px;">
           <option value="To Read">To Read</option>
           <option value="Read">Read</option>
           <option value="Listened">Listened</option>
@@ -282,7 +240,6 @@
   <script>
     let authMode = 'login';
     let allBooks = [];
-    let searchDebounce = null;
 
     function showToast(msg) {
       const toast = document.getElementById('toast');
@@ -340,85 +297,6 @@
       }
     }
 
-    function triggerSearch(query) {
-      clearTimeout(searchDebounce);
-      const suggestionsBox = document.getElementById('suggestions');
-
-      if (!query || query.trim().length < 3) {
-        suggestionsBox.classList.add('hidden');
-        return;
-      }
-
-      searchDebounce = setTimeout(async () => {
-        try {
-          const res = await fetch(`/api/search-books?q=${encodeURIComponent(query)}`);
-          const results = await res.json();
-
-          if (results && results.length > 0) {
-            suggestionsBox.innerHTML = '';
-            results.forEach(item => {
-              const div = document.createElement('div');
-              div.className = 'suggestion-item';
-              div.innerHTML = `
-                ${item.cover_url ? `<img src="${item.cover_url}" alt="cover"/>` : '<span style="font-size:1.2rem;">📖</span>'}
-                <div>
-                  <div class="suggestion-title">${item.title}</div>
-                  <div class="suggestion-author">${item.author}</div>
-                </div>
-              `;
-
-              div.onclick = () => {
-                document.getElementById('title-input').value = item.title;
-                document.getElementById('author-input').value = item.author;
-                document.getElementById('cover-input').value = item.cover_url || '';
-                suggestionsBox.classList.add('hidden');
-              };
-
-              suggestionsBox.appendChild(div);
-            });
-            suggestionsBox.classList.remove('hidden');
-          } else {
-            suggestionsBox.classList.add('hidden');
-          }
-        } catch (err) {
-          console.error('Error fetching books from backend proxy:', err);
-        }
-      }, 300);
-    }
-
-    document.addEventListener('click', (e) => {
-      if (!e.target.closest('.input-wrapper')) {
-        document.getElementById('suggestions').classList.add('hidden');
-      }
-    });
-
-    async function handleAddBook(e) {
-      e.preventDefault();
-      const title = document.getElementById('title-input').value;
-      const author = document.getElementById('author-input').value;
-      const language = document.getElementById('lang-input').value;
-      const rating = document.getElementById('rating-input').value;
-      const status = document.getElementById('status-input').value;
-      const cover_url = document.getElementById('cover-input').value;
-
-      try {
-        const res = await fetch('/add-book', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-          body: new URLSearchParams({ title, author, language, rating, status, cover_url })
-        });
-
-        if (res.ok) {
-          showToast('Book added successfully!');
-          document.getElementById('add-form').reset();
-          document.getElementById('cover-input').value = '';
-          fetchBooks();
-        }
-      } catch (err) {
-        console.error('Error adding book:', err);
-      }
-    }
-
     async function updateBook(id, newRating, newStatus) {
       try {
         await fetch(`/update-book/${id}`, {
@@ -469,8 +347,7 @@
         const currentStatus = book.status || (book.read ? 'Read' : 'To Read');
         const encodedTitle = encodeURIComponent(book.title);
         const encodedAuthor = encodeURIComponent(book.author);
-        const fallbackCover = `https://placehold.co/400x600/1e1e1e/0088ff?text=${encodedTitle}+%0A+by+${encodedAuthor}`;
-        const coverUrl = book.cover_url || fallbackCover;
+        const coverUrl = `https://placehold.co/400x600/1e1e1e/0088ff?text=${encodedTitle}+%0A+by+${encodedAuthor}`;
         const bookLang = book.language || 'EN';
 
         const card = document.createElement('div');
@@ -478,7 +355,7 @@
 
         card.innerHTML = `
           <div class="cover-container">
-            <img src="${coverUrl}" alt="${book.title}" class="cover-image" onerror="this.onerror=null; this.src='${fallbackCover}';" />
+            <img src="${coverUrl}" alt="${book.title}" class="cover-image" />
           </div>
           <div class="card-content">
             <div>
