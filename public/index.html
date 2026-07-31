@@ -48,11 +48,11 @@
       gap: 1rem;
       margin-bottom: 2rem;
     }
-    .stats-card { background-color: #1e1e1e; border-radius: 8px; padding: 1.5rem; }
+    .stats-card { background-color: #1e1e1e; border-radius: 8px; padding: 1.5rem; border: 1px solid #2a2a2a; }
     .stats-card h2 { font-size: 0.8rem; color: #aaa; text-transform: uppercase; margin-bottom: 0.5rem; }
     .stats-card .number { font-size: 2.5rem; font-weight: bold; }
 
-    /* FORM & AUTOCOMPLETE */
+    /* ADD BOOK FORM */
     .add-book-form {
       background-color: #1e1e1e;
       border-radius: 8px;
@@ -62,12 +62,7 @@
       gap: 0.75rem;
       flex-wrap: wrap;
       align-items: center;
-      position: relative;
-    }
-    .input-group {
-      position: relative;
-      flex: 2;
-      min-width: 200px;
+      border: 1px solid #2a2a2a;
     }
     .add-book-form input, .add-book-form select, .filter-container input, .filter-container select {
       background-color: #121212;
@@ -76,36 +71,9 @@
       padding: 0.75rem;
       border-radius: 6px;
       outline: none;
-      width: 100%;
     }
-    .suggestions-box {
-      position: absolute;
-      top: 100%;
-      left: 0;
-      right: 0;
-      background-color: #1e1e1e;
-      border: 1px solid #333;
-      border-radius: 6px;
-      max-height: 250px;
-      overflow-y: auto;
-      z-index: 100;
-      margin-top: 4px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.5);
-    }
-    .suggestion-item {
-      padding: 0.75rem;
-      display: flex;
-      align-items: center;
-      gap: 0.75rem;
-      cursor: pointer;
-      border-bottom: 1px solid #2a2a2a;
-    }
-    .suggestion-item:hover { background-color: #2a2a2a; }
-    .suggestion-item img { width: 35px; height: 50px; object-fit: cover; border-radius: 3px; }
-    .suggestion-info { display: flex; flex-direction: column; }
-    .suggestion-title { font-weight: bold; font-size: 0.9rem; }
-    .suggestion-author { font-size: 0.75rem; color: #aaa; }
-
+    .add-book-form input[name="title"] { flex: 2; min-width: 180px; }
+    .add-book-form input[name="author"] { flex: 1.5; min-width: 140px; }
     .btn { background-color: #0088ff; color: white; border: none; padding: 0.75rem 1.5rem; border-radius: 6px; font-weight: bold; cursor: pointer; white-space: nowrap; }
     .btn-logout { background-color: #333; padding: 0.5rem 1rem; font-size: 0.85rem; }
 
@@ -119,7 +87,7 @@
     .filter-container input { flex: 2; min-width: 200px; }
     .filter-container select { flex: 1; min-width: 140px; }
 
-    /* GRID AND CARDS */
+    /* GRID AND CARDS WITH HOVER */
     .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 1.5rem; }
     .card { 
       background-color: #1e1e1e; 
@@ -129,10 +97,15 @@
       flex-direction: column; 
       justify-content: space-between; 
       border: 1px solid #2a2a2a;
+      transition: transform 0.2s ease, border-color 0.2s ease;
+    }
+    .card:hover {
+      transform: translateY(-4px);
+      border-color: #0088ff;
     }
     .cover-container {
       width: 100%;
-      height: 280px;
+      height: 260px;
       background-color: #121212;
       display: flex;
       align-items: center;
@@ -155,7 +128,7 @@
     }
     .card h3 { font-size: 1.1rem; line-height: 1.3; }
     .card p { color: #888; font-size: 0.85rem; }
-    .lang-badge { display: inline-block; font-size: 0.7rem; background-color: #333; color: #aaa; padding: 0.15rem 0.4rem; border-radius: 3px; margin-top: 0.3rem; }
+    .lang-badge { display: inline-block; font-size: 0.7rem; background-color: #2a2a2a; color: #0088ff; padding: 0.15rem 0.4rem; border-radius: 3px; margin-top: 0.3rem; font-weight: bold; }
     .card .meta { display: flex; justify-content: space-between; align-items: center; margin-top: 0.5rem; }
     
     .rating-select, .status-select {
@@ -173,6 +146,29 @@
     .delete-btn { background: none; border: 1px solid #d32f2f; color: #ff6666; padding: 0.4rem 0.8rem; border-radius: 4px; cursor: pointer; align-self: flex-end; font-size: 0.85rem; }
     .delete-btn:hover { background-color: #d32f2f; color: white; }
     .hidden { display: none !important; }
+
+    /* TOAST NOTIFICATIONS */
+    #toast {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      background-color: #0088ff;
+      color: #fff;
+      padding: 0.8rem 1.5rem;
+      border-radius: 6px;
+      font-weight: bold;
+      font-size: 0.9rem;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+      opacity: 0;
+      transform: translateY(20px);
+      transition: opacity 0.3s ease, transform 0.3s ease;
+      z-index: 1000;
+      pointer-events: none;
+    }
+    #toast.show {
+      opacity: 1;
+      transform: translateY(0);
+    }
   </style>
 </head>
 <body>
@@ -210,15 +206,10 @@
         </div>
       </div>
 
-      <!-- ADD BOOK FORM WITH GOOGLE BOOKS AUTOCOMPLETE -->
-      <form class="add-book-form" action="/add-book" method="POST" autocomplete="off">
-        <div class="input-group">
-          <input type="text" id="book-title-input" name="title" placeholder="Search title or enter manually..." required oninput="searchGoogleBooks(this.value)">
-          <div id="suggestions" class="suggestions-box hidden"></div>
-        </div>
-        
-        <input type="text" id="book-author-input" name="author" placeholder="Author" style="flex: 1; min-width: 140px;" required>
-        <input type="hidden" id="book-cover-input" name="cover_url">
+      <!-- ADD BOOK FORM -->
+      <form class="add-book-form" action="/add-book" method="POST" onsubmit="showToast('Book saved!')">
+        <input type="text" name="title" placeholder="Book Title" required>
+        <input type="text" name="author" placeholder="Author" required>
 
         <select name="language" style="flex: 0.8; min-width: 100px;">
           <option value="EN">English</option>
@@ -262,10 +253,19 @@
 
   </div>
 
+  <!-- TOAST CONTAINER -->
+  <div id="toast">Message</div>
+
   <script>
     let authMode = 'login';
     let allBooks = [];
-    let searchDebounce = null;
+
+    function showToast(msg) {
+      const toast = document.getElementById('toast');
+      toast.textContent = msg;
+      toast.classList.add('show');
+      setTimeout(() => toast.classList.remove('show'), 3000);
+    }
 
     function toggleAuthMode() {
       authMode = authMode === 'login' ? 'register' : 'login';
@@ -316,66 +316,6 @@
       }
     }
 
-    // AUTOCOMPLETE CON GOOGLE BOOKS API
-    function searchGoogleBooks(query) {
-      clearTimeout(searchDebounce);
-      const suggestionsBox = document.getElementById('suggestions');
-
-      if (!query || query.length < 3) {
-        suggestionsBox.classList.add('hidden');
-        return;
-      }
-
-      searchDebounce = setTimeout(async () => {
-        try {
-          const res = await fetch(`https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(query)}&maxResults=5`);
-          const data = await res.json();
-
-          if (data.items && data.items.length > 0) {
-            suggestionsBox.innerHTML = '';
-            data.items.forEach(item => {
-              const info = item.volumeInfo;
-              const title = info.title || '';
-              const author = info.authors ? info.authors.join(', ') : 'Unknown Author';
-              const img = info.imageLinks?.thumbnail ? info.imageLinks.thumbnail.replace('http://', 'https://') : '';
-
-              const div = document.createElement('div');
-              div.className = 'suggestion-item';
-              div.innerHTML = `
-                ${img ? `<img src="${img}" alt="cover"/>` : '<span style="font-size:1.5rem;">📖</span>'}
-                <div class="suggestion-info">
-                  <span class="suggestion-title">${title}</span>
-                  <span class="suggestion-author">${author}</span>
-                </div>
-              `;
-
-              div.onclick = () => selectBookSuggestion(title, author, img);
-              suggestionsBox.appendChild(div);
-            });
-            suggestionsBox.classList.remove('hidden');
-          } else {
-            suggestionsBox.classList.add('hidden');
-          }
-        } catch (err) {
-          console.error('Error fetching suggestions:', err);
-        }
-      }, 300);
-    }
-
-    function selectBookSuggestion(title, author, coverUrl) {
-      document.getElementById('book-title-input').value = title;
-      document.getElementById('book-author-input').value = author;
-      document.getElementById('book-cover-input').value = coverUrl;
-      document.getElementById('suggestions').classList.add('hidden');
-    }
-
-    // CERRAR SUGERENCIAS AL HACER CLIC FUERA
-    document.addEventListener('click', (e) => {
-      if (!e.target.closest('.input-group')) {
-        document.getElementById('suggestions').classList.add('hidden');
-      }
-    });
-
     async function updateBook(id, newRating, newStatus) {
       try {
         await fetch(`/update-book/${id}`, {
@@ -383,6 +323,7 @@
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ rating: newRating, status: newStatus })
         });
+        showToast('Book updated');
         fetchBooks();
       } catch (err) {
         console.error('Error updating book:', err);
@@ -425,9 +366,7 @@
         const currentStatus = book.status || (book.read ? 'Read' : 'To Read');
         const encodedTitle = encodeURIComponent(book.title);
         const encodedAuthor = encodeURIComponent(book.author);
-        
-        // Si el libro no tiene portada de Google, usa el fallback tipográfico limpio
-        const coverUrl = book.cover_url || `https://placehold.co/400x600/1e1e1e/0088ff?text=${encodedTitle}+%0A+by+${encodedAuthor}`;
+        const coverUrl = `https://placehold.co/400x600/1e1e1e/0088ff?text=${encodedTitle}+%0A+by+${encodedAuthor}`;
         const bookLang = book.language || 'EN';
 
         const card = document.createElement('div');
@@ -435,7 +374,7 @@
 
         card.innerHTML = `
           <div class="cover-container">
-            <img src="${coverUrl}" alt="${book.title}" class="cover-image" onerror="this.onerror=null; this.src='https://placehold.co/400x600/1e1e1e/0088ff?text=${encodedTitle}';" />
+            <img src="${coverUrl}" alt="${book.title}" class="cover-image" />
           </div>
           <div class="card-content">
             <div>
@@ -457,7 +396,7 @@
                 <option value="Listened" ${currentStatus === 'Listened' ? 'selected' : ''}>Listened</option>
               </select>
             </div>
-            <form action="/delete-book/${book.id}" method="POST" style="margin-top: 0.5rem;">
+            <form action="/delete-book/${book.id}" method="POST" style="margin-top: 0.5rem;" onsubmit="showToast('Book deleted')">
               <button type="submit" class="delete-btn">Delete</button>
             </form>
           </div>
