@@ -199,6 +199,7 @@
         </select>
 
         <select name="rating" style="flex: 0.8; min-width: 100px;">
+          <option value="0" selected>Unrated</option>
           <option value="5">★ 5 Stars</option>
           <option value="4">★ 4 Stars</option>
           <option value="3">★ 3 Stars</option>
@@ -344,7 +345,7 @@
 
       // SORTING LOGIC
       if (sortOrder === 'RATING_DESC') {
-        filtered.sort((a, b) => (b.rating || 5) - (a.rating || 5));
+        filtered.sort((a, b) => (b.rating || 0) - (a.rating || 0));
       } else if (sortOrder === 'TITLE_ASC') {
         filtered.sort((a, b) => a.title.localeCompare(b.title));
       }
@@ -378,13 +379,14 @@
             </div>
             <div class="meta">
               <select class="rating-select" onchange="updateBook(${book.id}, this.value, '${currentStatus}')">
+                <option value="0" ${!book.rating || book.rating === 0 ? 'selected' : ''}>Unrated</option>
                 <option value="5" ${book.rating === 5 ? 'selected' : ''}>★ 5</option>
                 <option value="4" ${book.rating === 4 ? 'selected' : ''}>★ 4</option>
                 <option value="3" ${book.rating === 3 ? 'selected' : ''}>★ 3</option>
                 <option value="2" ${book.rating === 2 ? 'selected' : ''}>★ 2</option>
                 <option value="1" ${book.rating === 1 ? 'selected' : ''}>★ 1</option>
               </select>
-              <select class="status-select" onchange="updateBook(${book.id}, ${book.rating || 5}, this.value)">
+              <select class="status-select" onchange="updateBook(${book.id}, ${book.rating || 0}, this.value)">
                 <option value="To Read" ${currentStatus === 'To Read' ? 'selected' : ''}>To Read</option>
                 <option value="Read" ${currentStatus === 'Read' ? 'selected' : ''}>Read</option>
                 <option value="Listened" ${currentStatus === 'Listened' ? 'selected' : ''}>Listened</option>

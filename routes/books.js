@@ -32,6 +32,9 @@ router.post('/add-book', requireAuth, async (req, res) => {
     return res.status(400).send('Title and Author are required');
   }
 
+  // Convert 0, empty, or unrated values to NULL in PostgreSQL
+  const parsedRating = (rating && parseInt(rating) > 0) ? parseInt(rating) : null;
+
   try {
     await pool.query(
       `INSERT INTO books (title, author, rating, status, language, user_id) 
@@ -39,7 +42,7 @@ router.post('/add-book', requireAuth, async (req, res) => {
       [
         title, 
         author, 
-        rating || 5, 
+        parsedRating, 
         status || 'To Read', 
         language || 'EN', 
         req.session.userId
@@ -57,10 +60,12 @@ router.post('/update-book/:id', requireAuth, async (req, res) => {
   const { id } = req.params;
   const { rating, status } = req.body;
 
+  const parsedRating = (rating && parseInt(rating) > 0) ? parseInt(rating) : null;
+
   try {
     await pool.query(
       'UPDATE books SET rating = $1, status = $2 WHERE id = $3 AND user_id = $4',
-      [rating, status, id, req.session.userId]
+      [parsedRating, status, id, req.session.userId]
     );
     res.json({ success: true });
   } catch (err) {
