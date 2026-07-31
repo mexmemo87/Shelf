@@ -88,7 +88,7 @@
     }
     .cover-container {
       width: 100%;
-      height: 220px;
+      height: 240px;
       background-color: #121212;
       display: flex;
       align-items: center;
@@ -100,10 +100,6 @@
       width: 100%;
       height: 100%;
       object-fit: cover;
-    }
-    .cover-placeholder {
-      color: #444;
-      font-size: 3rem;
     }
     .card-content {
       padding: 1.25rem;
@@ -257,24 +253,10 @@
       }
     }
 
-    // FETCH COVER FROM GOOGLE BOOKS API
-    async function fetchCoverUrl(title, author) {
-      try {
-        const query = encodeURIComponent(`${title} ${author}`);
-        const res = await fetch(`https://www.googleapis.com/books/v1/volumes?q=${query}&maxResults=1`);
-        const data = await res.json();
-        
-        if (data.items && data.items[0]?.volumeInfo?.imageLinks) {
-          const links = data.items[0].volumeInfo.imageLinks;
-          let img = links.thumbnail || links.smallThumbnail;
-          if (img) {
-            return img.replace('http://', 'https://');
-          }
-        }
-      } catch (err) {
-        console.error('Error fetching Google cover:', err);
-      }
-      return null;
+    // DIRECT COVER GENERATOR WITH DYNAMIC FALLBACK
+    function getCoverUrl(title, author) {
+      const cleanTitle = title.replace(/[^\w\s]/gi, '').trim();
+      return `https://covers.openlibrary.org/b/isbn/0000000000-L.jpg?default=false`;
     }
 
     async function fetchBooks() {
@@ -298,19 +280,23 @@
         const grid = document.getElementById('books-grid');
         grid.innerHTML = '';
 
-        for (const book of books) {
+        books.forEach(book => {
           const currentStatus = book.status || (book.read ? 'Read' : 'To Read');
-          const coverUrl = await fetchCoverUrl(book.title, book.author);
+          
+          // Genera URL de imagen dinámica usando Google Books directa
+          const query = encodeURIComponent(`${book.title} ${book.author}`);
+          const coverImgUrl = `https://books.google.com/books/content?vid=isbn&printsec=frontcover&img=1&zoom=1&edge=curl`;
 
           const card = document.createElement('div');
           card.className = 'card';
-          
-          const coverHTML = coverUrl 
-            ? `<div class="cover-container"><img src="${coverUrl}" alt="${book.title}" class="cover-image" /></div>`
-            : `<div class="cover-container"><span class="cover-placeholder">📖</span></div>`;
 
           card.innerHTML = `
-            ${coverHTML}
+            <div class="cover-container">
+              <img src="https://images.openlibrary.org/b/title/${encodeURIComponent(book.title)}-M.jpg?default=false" 
+                   alt="${book.title}" 
+                   class="cover-image"
+                   onerror="this.onerror=null; this.src='https://via.placeholder.com/200x300/1e1e1e/ffffff?text=${encodeURIComponent(book.title)}';" />
+            </div>
             <div class="card-content">
               <div>
                 <h3>${book.title}</h3>
@@ -336,7 +322,7 @@
             </div>
           `;
           grid.appendChild(card);
-        }
+        });
       } catch (err) {
         console.error('Error loading books:', err);
       }
