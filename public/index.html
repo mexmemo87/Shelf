@@ -190,8 +190,8 @@
 
       <!-- ADD BOOK FORM -->
       <form class="add-book-form" action="/add-book" method="POST" onsubmit="showToast('Book saved!')">
-        <input type="text" name="title" placeholder="Book Title" required>
-        <input type="text" name="author" placeholder="Author" required>
+        <input type="text" name="title" placeholder="Book Title" autocomplete="off" required>
+        <input type="text" name="author" placeholder="Author" autocomplete="off" required>
 
         <select name="language" style="flex: 0.8; min-width: 100px;">
           <option value="EN">English</option>
@@ -215,7 +215,7 @@
         <button type="submit" class="btn">Add Book</button>
       </form>
 
-      <!-- LIVE SEARCH & FILTERS -->
+      <!-- LIVE SEARCH, FILTERS & SORTING -->
       <div class="filter-container">
         <input type="text" id="search-input" placeholder="Search library..." oninput="filterBooks()">
         <select id="lang-filter" onchange="filterBooks()">
@@ -227,6 +227,11 @@
           <option value="ALL">All Statuses</option>
           <option value="To Read">To Read</option>
           <option value="COMPLETED">Read / Listened</option>
+        </select>
+        <select id="sort-order" onchange="filterBooks()">
+          <option value="NEWEST">Newest First</option>
+          <option value="RATING_DESC">Highest Rating</option>
+          <option value="TITLE_ASC">Title (A-Z)</option>
         </select>
       </div>
 
@@ -315,8 +320,9 @@
       const query = document.getElementById('search-input').value.toLowerCase().trim();
       const statusFilter = document.getElementById('status-filter').value;
       const langFilter = document.getElementById('lang-filter').value;
+      const sortOrder = document.getElementById('sort-order').value;
 
-      const filtered = allBooks.filter(book => {
+      let filtered = allBooks.filter(book => {
         const currentStatus = book.status || (book.read ? 'Read' : 'To Read');
         const matchesQuery = book.title.toLowerCase().includes(query) || book.author.toLowerCase().includes(query);
         const bookLang = book.language || 'EN';
@@ -335,6 +341,13 @@
 
         return matchesQuery && matchesStatus && matchesLang;
       });
+
+      // SORTING LOGIC
+      if (sortOrder === 'RATING_DESC') {
+        filtered.sort((a, b) => (b.rating || 5) - (a.rating || 5));
+      } else if (sortOrder === 'TITLE_ASC') {
+        filtered.sort((a, b) => a.title.localeCompare(b.title));
+      }
 
       renderGrid(filtered);
     }
