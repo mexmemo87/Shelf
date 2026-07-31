@@ -75,7 +75,7 @@
     .btn { background-color: #0088ff; color: white; border: none; padding: 0.75rem 1.5rem; border-radius: 6px; font-weight: bold; cursor: pointer; }
     .btn-logout { background-color: #333; padding: 0.5rem 1rem; font-size: 0.85rem; }
 
-    /* GRID AND CARDS WITH COVERS */
+    /* GRID AND CARDS */
     .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 1.5rem; }
     .card { 
       background-color: #1e1e1e; 
@@ -88,24 +88,18 @@
     }
     .cover-container {
       width: 100%;
-      height: 240px;
+      height: 260px;
       background-color: #121212;
       display: flex;
       align-items: center;
       justify-content: center;
       overflow: hidden;
       border-bottom: 1px solid #2a2a2a;
-      position: relative;
     }
     .cover-image {
       width: 100%;
       height: 100%;
       object-fit: cover;
-      display: none; /* Se muestra solo cuando carga con éxito */
-    }
-    .cover-placeholder {
-      color: #444;
-      font-size: 3rem;
     }
     .card-content {
       padding: 1.25rem;
@@ -259,35 +253,6 @@
       }
     }
 
-    // BUSCA LA PORTADA EN SEGUNDO PLANO Y LA INYECTA
-    async function loadCoverAsync(bookId, title, author) {
-      try {
-        const query = encodeURIComponent(`${title} ${author}`);
-        const res = await fetch(`https://www.googleapis.com/books/v1/volumes?q=${query}&maxResults=1`);
-        const data = await res.json();
-
-        if (data.items && data.items[0]?.volumeInfo?.imageLinks) {
-          const links = data.items[0].volumeInfo.imageLinks;
-          let imgUrl = links.thumbnail || links.smallThumbnail;
-          if (imgUrl) {
-            imgUrl = imgUrl.replace('http://', 'https://');
-            const imgEl = document.getElementById(`cover-img-${bookId}`);
-            const placeholderEl = document.getElementById(`cover-ph-${bookId}`);
-            
-            if (imgEl && placeholderEl) {
-              imgEl.src = imgUrl;
-              imgEl.onload = () => {
-                imgEl.style.display = 'block';
-                placeholderEl.style.display = 'none';
-              };
-            }
-          }
-        }
-      } catch (err) {
-        console.error(`Error loading cover for book ${bookId}:`, err);
-      }
-    }
-
     async function fetchBooks() {
       try {
         const response = await fetch('/api/books');
@@ -311,14 +276,18 @@
 
         books.forEach(book => {
           const currentStatus = book.status || (book.read ? 'Read' : 'To Read');
+          
+          // Genera una portada tipográfica elegante usando un CDN directo
+          const encodedTitle = encodeURIComponent(book.title);
+          const encodedAuthor = encodeURIComponent(book.author);
+          const coverUrl = `https://placehold.co/400x600/1e1e1e/0088ff?text=${encodedTitle}+%0A+by+${encodedAuthor}`;
 
           const card = document.createElement('div');
           card.className = 'card';
 
           card.innerHTML = `
             <div class="cover-container">
-              <span class="cover-placeholder" id="cover-ph-${book.id}">📖</span>
-              <img id="cover-img-${book.id}" alt="${book.title}" class="cover-image" />
+              <img src="${coverUrl}" alt="${book.title}" class="cover-image" />
             </div>
             <div class="card-content">
               <div>
@@ -345,9 +314,6 @@
             </div>
           `;
           grid.appendChild(card);
-
-          // Dispara la búsqueda de la portada en segundo plano
-          loadCoverAsync(book.id, book.title, book.author);
         });
       } catch (err) {
         console.error('Error loading books:', err);
