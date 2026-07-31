@@ -95,11 +95,17 @@
       justify-content: center;
       overflow: hidden;
       border-bottom: 1px solid #2a2a2a;
+      position: relative;
     }
     .cover-image {
       width: 100%;
       height: 100%;
       object-fit: cover;
+      display: none; /* Se muestra solo cuando carga con éxito */
+    }
+    .cover-placeholder {
+      color: #444;
+      font-size: 3rem;
     }
     .card-content {
       padding: 1.25rem;
@@ -253,10 +259,33 @@
       }
     }
 
-    // DIRECT COVER GENERATOR WITH DYNAMIC FALLBACK
-    function getCoverUrl(title, author) {
-      const cleanTitle = title.replace(/[^\w\s]/gi, '').trim();
-      return `https://covers.openlibrary.org/b/isbn/0000000000-L.jpg?default=false`;
+    // BUSCA LA PORTADA EN SEGUNDO PLANO Y LA INYECTA
+    async function loadCoverAsync(bookId, title, author) {
+      try {
+        const query = encodeURIComponent(`${title} ${author}`);
+        const res = await fetch(`https://www.googleapis.com/books/v1/volumes?q=${query}&maxResults=1`);
+        const data = await res.json();
+
+        if (data.items && data.items[0]?.volumeInfo?.imageLinks) {
+          const links = data.items[0].volumeInfo.imageLinks;
+          let imgUrl = links.thumbnail || links.smallThumbnail;
+          if (imgUrl) {
+            imgUrl = imgUrl.replace('http://', 'https://');
+            const imgEl = document.getElementById(`cover-img-${bookId}`);
+            const placeholderEl = document.getElementById(`cover-ph-${bookId}`);
+            
+            if (imgEl && placeholderEl) {
+              imgEl.src = imgUrl;
+              imgEl.onload = () => {
+                imgEl.style.display = 'block';
+                placeholderEl.style.display = 'none';
+              };
+            }
+          }
+        }
+      } catch (err) {
+        console.error(`Error loading cover for book ${bookId}:`, err);
+      }
     }
 
     async function fetchBooks() {
@@ -265,7 +294,7 @@
         if (!response.ok) return;
         const books = await response.json();
 
-        // CALCULATE METRICS
+        // METRICS
         const total = books.length;
         const completed = books.filter(b => {
           const st = b.status || (b.read ? 'Read' : 'To Read');
@@ -282,20 +311,14 @@
 
         books.forEach(book => {
           const currentStatus = book.status || (book.read ? 'Read' : 'To Read');
-          
-          // Genera URL de imagen dinámica usando Google Books directa
-          const query = encodeURIComponent(`${book.title} ${book.author}`);
-          const coverImgUrl = `https://books.google.com/books/content?vid=isbn&printsec=frontcover&img=1&zoom=1&edge=curl`;
 
           const card = document.createElement('div');
           card.className = 'card';
 
           card.innerHTML = `
             <div class="cover-container">
-              <img src="https://images.openlibrary.org/b/title/${encodeURIComponent(book.title)}-M.jpg?default=false" 
-                   alt="${book.title}" 
-                   class="cover-image"
-                   onerror="this.onerror=null; this.src='https://via.placeholder.com/200x300/1e1e1e/ffffff?text=${encodeURIComponent(book.title)}';" />
+              <span class="cover-placeholder" id="cover-ph-${book.id}">📖</span>
+              <img id="cover-img-${book.id}" alt="${book.title}" class="cover-image" />
             </div>
             <div class="card-content">
               <div>
@@ -322,6 +345,9 @@
             </div>
           `;
           grid.appendChild(card);
+
+          // Dispara la búsqueda de la portada en segundo plano
+          loadCoverAsync(book.id, book.title, book.author);
         });
       } catch (err) {
         console.error('Error loading books:', err);
