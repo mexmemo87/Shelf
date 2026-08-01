@@ -129,6 +129,7 @@
     }
     .dropdown-header { font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; font-weight: bold; }
     .dropdown-user-info { font-size: 0.9rem; font-weight: bold; color: var(--text-main); word-break: break-all; }
+    .btn-edit-user { background: none; border: none; color: var(--accent-blue); font-size: 0.75rem; cursor: pointer; text-align: left; padding: 0; text-decoration: underline; }
 
     .auth-card {
       background-color: var(--card-bg);
@@ -379,6 +380,7 @@
           <div id="user-dropdown" class="user-dropdown hidden">
             <div class="dropdown-header">Signed in as</div>
             <div class="dropdown-user-info" id="dropdown-email">User</div>
+            <button class="btn-edit-user" onclick="editUsername(event)">✎ Edit display name</button>
             <hr style="border: none; border-top: 1px solid var(--card-border); margin: 0.2rem 0;">
             <button class="btn-logout" onclick="logout()">Log Out</button>
           </div>
@@ -553,14 +555,32 @@
         : 'Already have an account? Sign In';
     }
 
+    function updateProfileUI(nameOrEmail) {
+      if (!nameOrEmail) return;
+      const cleanName = nameOrEmail.trim();
+      const initial = cleanName.charAt(0).toUpperCase();
+      document.getElementById('avatar-initial').textContent = initial;
+      document.getElementById('user-email-display').textContent = cleanName;
+      document.getElementById('dropdown-email').textContent = cleanName;
+      localStorage.setItem('shelf_user_display_name', cleanName);
+    }
+
+    function editUsername(e) {
+      if (e) e.stopPropagation();
+      const current = localStorage.getItem('shelf_user_display_name') || '';
+      const input = prompt('Enter your name or email for the profile:', current);
+      if (input && input.trim() !== '') {
+        updateProfileUI(input);
+      }
+    }
+
     async function handleAuth() {
       const emailInput = document.getElementById('email').value.trim();
       const password = document.getElementById('password').value;
 
       if (!emailInput || !password) return alert('Please enter both email and password');
 
-      // GUARDA EL EMAIL ANTES DE ENVIAR LA PETICION AL SERVIDOR
-      localStorage.setItem('shelf_user_email', emailInput);
+      localStorage.setItem('shelf_user_display_name', emailInput);
 
       const endpoint = authMode === 'login' ? '/api/login' : '/api/register';
       const res = await fetch(endpoint, {
@@ -579,16 +599,8 @@
 
     async function logout() {
       await fetch('/api/logout', { method: 'POST' });
-      localStorage.removeItem('shelf_user_email');
+      localStorage.removeItem('shelf_user_display_name');
       checkSession();
-    }
-
-    function updateProfileUI(email) {
-      if (!email) return;
-      const initial = email.charAt(0).toUpperCase();
-      document.getElementById('avatar-initial').textContent = initial;
-      document.getElementById('user-email-display').textContent = email;
-      document.getElementById('dropdown-email').textContent = email;
     }
 
     async function checkSession() {
@@ -599,19 +611,14 @@
         document.getElementById('auth-section').classList.add('hidden');
         document.getElementById('app-section').classList.remove('hidden');
         
-        let savedEmail = localStorage.getItem('shelf_user_email');
+        let savedName = localStorage.getItem('shelf_user_display_name');
         
-        // Si no hay correo guardado aún, solicitamos al usuario que lo ingrese una sola vez para sincronizar la UI
-        if (!savedEmail || savedEmail === 'User') {
-          savedEmail = prompt('Please confirm your account email or name:', '');
-          if (savedEmail) {
-            localStorage.setItem('shelf_user_email', savedEmail.trim());
-          } else {
-            savedEmail = 'User';
-          }
+        // Si es la primera vez o vale 'Active User', usa lo que venga del server o fallback
+        if (!savedName || savedName === 'Active User' || savedName === 'User') {
+          savedName = data.email || data.user || data.username || 'User';
         }
 
-        updateProfileUI(savedEmail);
+        updateProfileUI(savedName);
         fetchBooks();
       } else {
         document.getElementById('auth-section').classList.remove('hidden');
