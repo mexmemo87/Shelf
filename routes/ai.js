@@ -3,7 +3,8 @@ const router = express.Router();
 const { GoogleGenAI } = require('@google/genai');
 const pool = require('../config/db');
 
-const ai = new GoogleGenAI();
+// Explicitly pass the API key from environment variables
+const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
 // Middleware to ensure authentication
 function requireAuth(req, res, next) {
