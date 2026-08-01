@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="dark">
+<html lang="en" data-theme="light">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -312,7 +312,7 @@
           </div>
         </div>
         <div class="header-actions">
-          <button class="btn-theme" onclick="toggleTheme()" title="Toggle Light/Dark Theme">🌙 Dark</button>
+          <button class="btn-theme" onclick="toggleTheme()" title="Toggle Light/Dark Theme">☀️ Light</button>
           <button class="btn-logout" onclick="logout()">Log Out</button>
         </div>
       </div>
@@ -419,9 +419,9 @@
     let currentViewMode = 'grid';
     let aiIsOpen = false;
 
-    // Aplicar tema persistente desde localStorage
+    // Aplicar tema persistente desde localStorage (default: 'light')
     function applySavedTheme() {
-      const savedTheme = localStorage.getItem('theme') || 'dark';
+      const savedTheme = localStorage.getItem('theme') || 'light';
       document.documentElement.setAttribute('data-theme', savedTheme);
       const themeBtn = document.querySelector('.btn-theme');
       if (themeBtn) {
