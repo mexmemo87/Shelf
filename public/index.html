@@ -78,7 +78,8 @@
     .btn-ai:disabled { opacity: 0.6; cursor: not-allowed; }
     .ai-content { font-size: 0.95rem; line-height: 1.6; color: #e0e0e0; }
     .ai-content h3 { color: #ab47bc; margin-top: 1rem; margin-bottom: 0.3rem; }
-    .ai-content ul { margin-left: 1.2rem; margin-bottom: 0.5rem; }
+    .ai-content ul { margin-left: 0; list-style: none; display: flex; flex-direction: column; gap: 0.8rem; margin-top: 0.5rem; }
+    .ai-content li { background-color: #121212; padding: 1rem; border-left: 4px solid #8e24aa; border-radius: 4px; }
 
     /* ADD BOOK FORM */
     .add-book-form {
@@ -105,19 +106,42 @@
     .btn { background-color: #0088ff; color: white; border: none; padding: 0.75rem 1.5rem; border-radius: 6px; font-weight: bold; cursor: pointer; white-space: nowrap; }
     .btn-logout { background-color: #333; padding: 0.5rem 1rem; font-size: 0.85rem; }
 
-    /* FILTERS */
+    /* FILTERS & VIEW TOGGLE */
     .filter-container {
       display: flex;
-      gap: 1rem;
+      gap: 0.75rem;
       margin-bottom: 2rem;
       flex-wrap: wrap;
+      align-items: center;
     }
-    .filter-container input { flex: 2; min-width: 200px; }
-    .filter-container select { flex: 1; min-width: 140px; }
+    .filter-container input { flex: 2; min-width: 180px; }
+    .filter-container select { flex: 1; min-width: 120px; }
 
-    /* GRID AND CARDS */
+    .view-toggle-group {
+      display: flex;
+      background-color: #1e1e1e;
+      border: 1px solid #333;
+      border-radius: 6px;
+      overflow: hidden;
+    }
+    .btn-toggle {
+      background: transparent;
+      color: #888;
+      border: none;
+      padding: 0.75rem 1rem;
+      font-weight: bold;
+      cursor: pointer;
+      font-size: 0.85rem;
+      transition: all 0.2s ease;
+    }
+    .btn-toggle.active {
+      background-color: #0088ff;
+      color: #ffffff;
+    }
+
+    /* GRID VIEW (DEFAULT) */
     .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 1.5rem; }
-    .card { 
+    .grid .card { 
       background-color: #1e1e1e; 
       border-radius: 8px; 
       overflow: hidden;
@@ -127,8 +151,8 @@
       border: 1px solid #2a2a2a;
       transition: transform 0.2s ease, border-color 0.2s ease;
     }
-    .card:hover { transform: translateY(-4px); border-color: #0088ff; }
-    .cover-container {
+    .grid .card:hover { transform: translateY(-4px); border-color: #0088ff; }
+    .grid .cover-container {
       width: 100%;
       height: 260px;
       background-color: #121212;
@@ -138,13 +162,43 @@
       overflow: hidden;
       border-bottom: 1px solid #2a2a2a;
     }
-    .cover-image { width: 100%; height: 100%; object-fit: cover; }
-    .card-content { padding: 1.25rem; display: flex; flex-direction: column; gap: 0.8rem; flex-grow: 1; justify-content: space-between; }
-    .card h3 { font-size: 1.1rem; line-height: 1.3; }
-    .card p { color: #888; font-size: 0.85rem; }
+    .grid .cover-image { width: 100%; height: 100%; object-fit: cover; }
+    .grid .card-content { padding: 1.25rem; display: flex; flex-direction: column; gap: 0.8rem; flex-grow: 1; justify-content: space-between; }
+    .grid h3 { font-size: 1.1rem; line-height: 1.3; }
+    .grid p { color: #888; font-size: 0.85rem; }
+    .grid .meta { display: flex; justify-content: space-between; align-items: center; margin-top: 0.5rem; }
+
+    /* LIST VIEW OVERRIDES */
+    .list { display: flex; flex-direction: column; gap: 0.75rem; }
+    .list .card {
+      background-color: #1e1e1e;
+      border-radius: 8px;
+      border: 1px solid #2a2a2a;
+      padding: 1rem 1.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1.5rem;
+      transition: border-color 0.2s ease;
+    }
+    .list .card:hover { border-color: #0088ff; }
+    .list .cover-container { display: none; }
+    .list .card-content {
+      display: flex;
+      width: 100%;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      padding: 0;
+    }
+    .list .card-info { flex: 2; }
+    .list h3 { font-size: 1.05rem; }
+    .list p { color: #888; font-size: 0.85rem; }
+    .list .meta { display: flex; gap: 0.75rem; align-items: center; margin-top: 0; }
+    .list form { margin-top: 0 !important; }
+
     .lang-badge { display: inline-block; font-size: 0.7rem; background-color: #2a2a2a; color: #0088ff; padding: 0.15rem 0.4rem; border-radius: 3px; margin-top: 0.3rem; font-weight: bold; }
-    .card .meta { display: flex; justify-content: space-between; align-items: center; margin-top: 0.5rem; }
-    
+
     .rating-select, .status-select {
       background-color: #121212;
       border: 1px solid #333;
@@ -157,7 +211,7 @@
     .rating-select { color: #ffca28; }
     .status-select { color: #81c784; }
 
-    .delete-btn { background: none; border: 1px solid #d32f2f; color: #ff6666; padding: 0.4rem 0.8rem; border-radius: 4px; cursor: pointer; align-self: flex-end; font-size: 0.85rem; }
+    .delete-btn { background: none; border: 1px solid #d32f2f; color: #ff6666; padding: 0.4rem 0.8rem; border-radius: 4px; cursor: pointer; font-size: 0.85rem; }
     .delete-btn:hover { background-color: #d32f2f; color: white; }
     .hidden { display: none !important; }
 
@@ -255,7 +309,7 @@
         <button type="submit" class="btn">Add Book</button>
       </form>
 
-      <!-- LIVE SEARCH, FILTERS & SORTING -->
+      <!-- LIVE SEARCH, FILTERS & VIEW TOGGLE -->
       <div class="filter-container">
         <input type="text" id="search-input" placeholder="Search library..." oninput="filterBooks()">
         <select id="lang-filter" onchange="filterBooks()">
@@ -273,6 +327,11 @@
           <option value="RATING_DESC">Highest Rating</option>
           <option value="TITLE_ASC">Title (A-Z)</option>
         </select>
+
+        <div class="view-toggle-group">
+          <button id="grid-view-btn" class="btn-toggle active" type="button" onclick="setViewMode('grid')">Grid</button>
+          <button id="list-view-btn" class="btn-toggle" type="button" onclick="setViewMode('list')">List</button>
+        </div>
       </div>
 
       <div class="grid" id="books-grid"></div>
@@ -285,6 +344,27 @@
   <script>
     let authMode = 'login';
     let allBooks = [];
+    let currentViewMode = 'grid';
+
+    function setViewMode(mode) {
+      currentViewMode = mode;
+      const grid = document.getElementById('books-grid');
+      const gridBtn = document.getElementById('grid-view-btn');
+      const listBtn = document.getElementById('list-view-btn');
+
+      if (mode === 'list') {
+        grid.classList.remove('grid');
+        grid.classList.add('list');
+        listBtn.classList.add('active');
+        gridBtn.classList.remove('active');
+      } else {
+        grid.classList.remove('list');
+        grid.classList.add('grid');
+        gridBtn.classList.add('active');
+        listBtn.classList.remove('active');
+      }
+      filterBooks();
+    }
 
     function showToast(msg) {
       const toast = document.getElementById('toast');
@@ -436,7 +516,7 @@
             <img src="${coverUrl}" alt="${book.title}" class="cover-image" />
           </div>
           <div class="card-content">
-            <div>
+            <div class="card-info">
               <h3>${book.title}</h3>
               <p>by ${book.author}</p>
               <span class="lang-badge">${bookLang === 'ES' ? 'Español' : 'English'}</span>
@@ -456,7 +536,7 @@
                 <option value="Listened" ${currentStatus === 'Listened' ? 'selected' : ''}>Listened</option>
               </select>
             </div>
-            <form action="/delete-book/${book.id}" method="POST" style="margin-top: 0.5rem;" onsubmit="showToast('Book deleted')">
+            <form action="/delete-book/${book.id}" method="POST" onsubmit="showToast('Book deleted')">
               <button type="submit" class="delete-btn">Delete</button>
             </form>
           </div>
