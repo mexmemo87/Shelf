@@ -357,7 +357,7 @@
 
     <!-- MAIN APP DASHBOARD -->
     <div id="app-section" class="hidden">
-      <!-- HEADER CON USER PROFILE CHIP (TIPO GOOGLE) -->
+      <!-- HEADER CON USER PROFILE CHIP -->
       <div class="header">
         <div class="brand">
           <span class="brand-icon">📚</span>
@@ -372,13 +372,13 @@
           <!-- USER AVATAR BADGE -->
           <div class="user-profile-badge" onclick="toggleUserDropdown(event)">
             <div class="user-avatar" id="avatar-initial">U</div>
-            <span class="user-email-text" id="user-email-display">user@email.com</span>
+            <span class="user-email-text" id="user-email-display">User</span>
           </div>
 
           <!-- USER DROPDOWN PANEL -->
           <div id="user-dropdown" class="user-dropdown hidden">
             <div class="dropdown-header">Signed in as</div>
-            <div class="dropdown-user-info" id="dropdown-email">user@email.com</div>
+            <div class="dropdown-user-info" id="dropdown-email">User</div>
             <hr style="border: none; border-top: 1px solid var(--card-border); margin: 0.2rem 0;">
             <button class="btn-logout" onclick="logout()">Log Out</button>
           </div>
@@ -494,7 +494,6 @@
       dropdown.classList.toggle('hidden');
     }
 
-    // Cerrar dropdown si da clic fuera
     document.addEventListener('click', () => {
       const dropdown = document.getElementById('user-dropdown');
       if (dropdown && !dropdown.classList.contains('hidden')) {
@@ -589,7 +588,8 @@
         document.getElementById('auth-section').classList.add('hidden');
         document.getElementById('app-section').classList.remove('hidden');
         
-        currentUserEmail = data.user || 'User';
+        // Extracción robusta de usuario (busca email, user o username en la respuesta)
+        currentUserEmail = data.email || data.user || data.username || 'Active User';
         const initial = currentUserEmail.charAt(0).toUpperCase();
         
         document.getElementById('avatar-initial').textContent = initial;
