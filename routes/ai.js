@@ -1,10 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { GoogleGenerativeAI } = require('@google/generative-ai');
 const pool = require('../config/db');
-
-// Initialize Google Generative AI
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
 function requireAuth(req, res, next) {
   if (!req.session || !req.session.userId) {
@@ -28,7 +24,7 @@ router.post('/api/recommendations', requireAuth, async (req, res) => {
       });
     }
 
-    const prompt = `
+    const promptText = `
 You are an expert literary advisor. Based on the following library of books read or saved by a user, provide 3 personalized book recommendations.
 
 User Library:
@@ -40,11 +36,25 @@ Requirements:
 - Format the response as a clean HTML snippet (using <h3>, <p>, <ul>, <li>) without markdown code blocks.
 `;
 
-    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
-    const response = await model.generateContent(prompt);
-    const outputText = response.response.text();
+    const apiKey = process.env.GEMINI_API_KEY;
+    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: promptText }] }]
+      })
+    });
 
+    const data = await response.json();
+
+    if (!response.ok) {
+      console.error('Gemini API Error Detail:', JSON.stringify(data));
+      throw new Error(data.error?.message || 'API request failed');
+    }
+
+    const outputText = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
     res.json({ recommendations: outputText });
+
   } catch (err) {
     console.error('Detailed Gemini Error:', err.message || err);
     res.status(500).json({ error: 'Failed to generate recommendations' });
