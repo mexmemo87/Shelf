@@ -1,10 +1,10 @@
 const express = require('express');
 const router = express.Router();
-const { GoogleGenAI } = require('@google/genai');
+const { GoogleGenerativeAI } = require('@google/generative-ai');
 const pool = require('../config/db');
 
-// Explicitly initialize with API key
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+// Initialize Google Generative AI
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
 function requireAuth(req, res, next) {
   if (!req.session || !req.session.userId) {
@@ -40,12 +40,9 @@ Requirements:
 - Format the response as a clean HTML snippet (using <h3>, <p>, <ul>, <li>) without markdown code blocks.
 `;
 
-    const response = await ai.models.generateContent({
-      model: 'gemini-1.5-flash',
-      contents: prompt,
-    });
-
-    const outputText = response.text || response.candidates?.[0]?.content?.parts?.[0]?.text || '';
+    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+    const response = await model.generateContent(prompt);
+    const outputText = response.response.text();
 
     res.json({ recommendations: outputText });
   } catch (err) {
