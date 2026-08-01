@@ -41,11 +41,13 @@ Requirements:
 `;
 
     const response = await ai.models.generateContent({
-      model: 'gemini-2.0-flash',
+      model: 'gemini-1.5-flash',
       contents: prompt,
     });
 
-    res.json({ recommendations: response.text });
+    const outputText = response.text || response.candidates?.[0]?.content?.parts?.[0]?.text || '';
+
+    res.json({ recommendations: outputText });
   } catch (err) {
     console.error('Detailed Gemini Error:', err.message || err);
     res.status(500).json({ error: 'Failed to generate recommendations' });
