@@ -486,7 +486,6 @@
     let allBooks = [];
     let currentViewMode = 'grid';
     let aiIsOpen = false;
-    let currentUserEmail = '';
 
     function toggleUserDropdown(e) {
       e.stopPropagation();
@@ -569,6 +568,8 @@
 
       const data = await res.json();
       if (res.ok) {
+        // GUARDAMOS EL EMAIL EN LOCALSTORAGE DE INMEDIATO AL AUTENTICAR
+        localStorage.setItem('shelf_user_email', email);
         checkSession();
       } else {
         alert(data.error || 'Authentication error');
@@ -577,6 +578,7 @@
 
     async function logout() {
       await fetch('/api/logout', { method: 'POST' });
+      localStorage.removeItem('shelf_user_email');
       checkSession();
     }
 
@@ -588,13 +590,13 @@
         document.getElementById('auth-section').classList.add('hidden');
         document.getElementById('app-section').classList.remove('hidden');
         
-        // Extracción robusta de usuario (busca email, user o username en la respuesta)
-        currentUserEmail = data.email || data.user || data.username || 'Active User';
-        const initial = currentUserEmail.charAt(0).toUpperCase();
+        // RECUPERA EL EMAIL DEL NAVEGADOR O DE LA RESPUESTA
+        const email = localStorage.getItem('shelf_user_email') || data.email || data.user || data.username || 'User';
+        const initial = email.charAt(0).toUpperCase();
         
         document.getElementById('avatar-initial').textContent = initial;
-        document.getElementById('user-email-display').textContent = currentUserEmail;
-        document.getElementById('dropdown-email').textContent = currentUserEmail;
+        document.getElementById('user-email-display').textContent = email;
+        document.getElementById('dropdown-email').textContent = email;
 
         fetchBooks();
       } else {
