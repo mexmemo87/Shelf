@@ -52,6 +52,34 @@
     .stats-card h2 { font-size: 0.8rem; color: #aaa; text-transform: uppercase; margin-bottom: 0.5rem; }
     .stats-card .number { font-size: 2.5rem; font-weight: bold; }
 
+    /* AI RECOMMENDATIONS SECTION */
+    .ai-section {
+      background-color: #1e1e1e;
+      border: 1px solid #8e24aa;
+      border-radius: 8px;
+      padding: 1.5rem;
+      margin-bottom: 2rem;
+    }
+    .ai-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1rem;
+    }
+    .btn-ai {
+      background: linear-gradient(135deg, #8e24aa, #0088ff);
+      color: white;
+      border: none;
+      padding: 0.75rem 1.25rem;
+      border-radius: 6px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+    .btn-ai:disabled { opacity: 0.6; cursor: not-allowed; }
+    .ai-content { font-size: 0.95rem; line-height: 1.6; color: #e0e0e0; }
+    .ai-content h3 { color: #ab47bc; margin-top: 1rem; margin-bottom: 0.3rem; }
+    .ai-content ul { margin-left: 1.2rem; margin-bottom: 0.5rem; }
+
     /* ADD BOOK FORM */
     .add-book-form {
       background-color: #1e1e1e;
@@ -188,6 +216,17 @@
         </div>
       </div>
 
+      <!-- AI RECOMMENDER SECTION -->
+      <div class="ai-section">
+        <div class="ai-header">
+          <h2>✨ AI Book Advisor</h2>
+          <button id="ai-btn" class="btn-ai" onclick="getRecommendations()">Get Recommendations</button>
+        </div>
+        <div id="ai-results" class="ai-content">
+          Click the button above to generate personalized book recommendations based on your library.
+        </div>
+      </div>
+
       <!-- ADD BOOK FORM -->
       <form class="add-book-form" action="/add-book" method="POST" onsubmit="showToast('Book saved!')">
         <input type="text" name="title" placeholder="Book Title" autocomplete="off" required>
@@ -317,6 +356,32 @@
       }
     }
 
+    async function getRecommendations() {
+      const btn = document.getElementById('ai-btn');
+      const container = document.getElementById('ai-results');
+
+      btn.disabled = true;
+      btn.textContent = 'Analyzing library...';
+      container.innerHTML = 'Thinking... Generating personalized recommendations...';
+
+      try {
+        const res = await fetch('/api/recommendations', { method: 'POST' });
+        const data = await res.json();
+
+        if (res.ok) {
+          container.innerHTML = data.recommendations;
+        } else {
+          container.innerHTML = `<span style="color: #ff6666;">${data.error || 'Failed to load recommendations.'}</span>`;
+        }
+      } catch (err) {
+        console.error('AI Error:', err);
+        container.innerHTML = '<span style="color: #ff6666;">Error connecting to recommendation service.</span>';
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'Get Recommendations';
+      }
+    }
+
     function filterBooks() {
       const query = document.getElementById('search-input').value.toLowerCase().trim();
       const statusFilter = document.getElementById('status-filter').value;
@@ -343,7 +408,6 @@
         return matchesQuery && matchesStatus && matchesLang;
       });
 
-      // SORTING LOGIC
       if (sortOrder === 'RATING_DESC') {
         filtered.sort((a, b) => (b.rating || 0) - (a.rating || 0));
       } else if (sortOrder === 'TITLE_ASC') {
@@ -407,7 +471,6 @@
         if (!response.ok) return;
         allBooks = await response.json();
 
-        // METRICS
         const total = allBooks.length;
         const completed = allBooks.filter(b => {
           const st = b.status || (b.read ? 'Read' : 'To Read');
