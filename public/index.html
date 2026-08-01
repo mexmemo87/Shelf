@@ -554,22 +554,23 @@
     }
 
     async function handleAuth() {
-      const email = document.getElementById('email').value;
+      const emailInput = document.getElementById('email').value.trim();
       const password = document.getElementById('password').value;
 
-      if (!email || !password) return alert('Please enter both email and password');
+      if (!emailInput || !password) return alert('Please enter both email and password');
+
+      // GUARDA EL EMAIL ANTES DE ENVIAR LA PETICION AL SERVIDOR
+      localStorage.setItem('shelf_user_email', emailInput);
 
       const endpoint = authMode === 'login' ? '/api/login' : '/api/register';
       const res = await fetch(endpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password })
+        body: JSON.stringify({ email: emailInput, password })
       });
 
       const data = await res.json();
       if (res.ok) {
-        // GUARDAMOS EL EMAIL EN LOCALSTORAGE DE INMEDIATO AL AUTENTICAR
-        localStorage.setItem('shelf_user_email', email);
         checkSession();
       } else {
         alert(data.error || 'Authentication error');
@@ -582,6 +583,14 @@
       checkSession();
     }
 
+    function updateProfileUI(email) {
+      if (!email) return;
+      const initial = email.charAt(0).toUpperCase();
+      document.getElementById('avatar-initial').textContent = initial;
+      document.getElementById('user-email-display').textContent = email;
+      document.getElementById('dropdown-email').textContent = email;
+    }
+
     async function checkSession() {
       const res = await fetch('/api/me');
       const data = await res.json();
@@ -590,14 +599,19 @@
         document.getElementById('auth-section').classList.add('hidden');
         document.getElementById('app-section').classList.remove('hidden');
         
-        // RECUPERA EL EMAIL DEL NAVEGADOR O DE LA RESPUESTA
-        const email = localStorage.getItem('shelf_user_email') || data.email || data.user || data.username || 'User';
-        const initial = email.charAt(0).toUpperCase();
+        let savedEmail = localStorage.getItem('shelf_user_email');
         
-        document.getElementById('avatar-initial').textContent = initial;
-        document.getElementById('user-email-display').textContent = email;
-        document.getElementById('dropdown-email').textContent = email;
+        // Si no hay correo guardado aún, solicitamos al usuario que lo ingrese una sola vez para sincronizar la UI
+        if (!savedEmail || savedEmail === 'User') {
+          savedEmail = prompt('Please confirm your account email or name:', '');
+          if (savedEmail) {
+            localStorage.setItem('shelf_user_email', savedEmail.trim());
+          } else {
+            savedEmail = 'User';
+          }
+        }
 
+        updateProfileUI(savedEmail);
         fetchBooks();
       } else {
         document.getElementById('auth-section').classList.remove('hidden');
