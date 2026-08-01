@@ -389,10 +389,21 @@
     let currentViewMode = 'grid';
     let aiIsOpen = false;
 
+    // Aplicar tema persistente desde localStorage
+    function applySavedTheme() {
+      const savedTheme = localStorage.getItem('theme') || 'dark';
+      document.documentElement.setAttribute('data-theme', savedTheme);
+      const themeBtn = document.querySelector('.btn-theme');
+      if (themeBtn) {
+        themeBtn.textContent = savedTheme === 'dark' ? '🌙 Dark' : '☀️ Light';
+      }
+    }
+
     function toggleTheme() {
       const current = document.documentElement.getAttribute('data-theme');
       const next = current === 'dark' ? 'light' : 'dark';
       document.documentElement.setAttribute('data-theme', next);
+      localStorage.setItem('theme', next);
       document.querySelector('.btn-theme').textContent = next === 'dark' ? '🌙 Dark' : '☀️ Light';
     }
 
@@ -658,6 +669,8 @@
       }
     }
 
+    // Inicializar estado del tema e iniciar sesión
+    applySavedTheme();
     checkSession();
   </script>
 </body>
