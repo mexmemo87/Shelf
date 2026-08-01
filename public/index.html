@@ -37,18 +37,41 @@
     body { background-color: var(--bg-color); color: var(--text-main); padding: 2rem; display: flex; justify-content: center; }
     .container { max-width: 950px; width: 100%; }
     
-    .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; }
-    h1 { font-size: 2.5rem; letter-spacing: -0.02em; }
+    /* HEADER ESTILIZADO */
+    .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; padding-bottom: 1rem; border-bottom: 1px solid var(--card-border); }
+    .brand { display: flex; align-items: center; gap: 0.75rem; }
+    .brand-icon { font-size: 2rem; }
+    .brand-text h1 { 
+      font-size: 2.2rem; 
+      font-weight: 800; 
+      letter-spacing: -0.03em;
+      background: linear-gradient(135deg, var(--accent-blue), #ab47bc);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      display: inline-block;
+    }
+    .brand-badge { 
+      font-size: 0.7rem; 
+      font-weight: 700; 
+      background: var(--card-border); 
+      color: var(--text-muted); 
+      padding: 0.2rem 0.5rem; 
+      border-radius: 12px; 
+      vertical-align: middle;
+      margin-left: 0.5rem;
+    }
+    .brand-tagline { font-size: 0.85rem; color: var(--text-muted); margin-top: 0.1rem; }
+
     .header-actions { display: flex; gap: 0.75rem; align-items: center; }
 
     .btn-theme {
       background: var(--card-bg);
       border: 1px solid var(--card-border);
       color: var(--text-main);
-      padding: 0.5rem 0.8rem;
+      padding: 0.5rem 0.9rem;
       border-radius: 6px;
       cursor: pointer;
-      font-size: 0.9rem;
+      font-size: 0.85rem;
       font-weight: 600;
     }
 
@@ -160,7 +183,7 @@
     .add-book-form input[name="title"] { flex: 2; min-width: 180px; }
     .add-book-form input[name="author"] { flex: 1.5; min-width: 140px; }
     .btn { background-color: var(--accent-blue); color: white; border: none; padding: 0.75rem 1.5rem; border-radius: 6px; font-weight: bold; cursor: pointer; white-space: nowrap; }
-    .btn-logout { background-color: var(--input-border); color: var(--text-main); padding: 0.5rem 1rem; font-size: 0.85rem; border: none; border-radius: 6px; cursor: pointer; }
+    .btn-logout { background-color: var(--input-border); color: var(--text-main); padding: 0.5rem 1rem; font-size: 0.85rem; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; }
 
     /* FILTERS & VIEW TOGGLE */
     .filter-container { display: flex; gap: 0.75rem; margin-bottom: 2rem; flex-wrap: wrap; align-items: center; }
@@ -279,8 +302,15 @@
 
     <!-- MAIN APP DASHBOARD -->
     <div id="app-section" class="hidden">
+      <!-- HEADER CON ESTILO PROFESIONAL -->
       <div class="header">
-        <h1>Shelf</h1>
+        <div class="brand">
+          <span class="brand-icon">📚</span>
+          <div class="brand-text">
+            <h1>Shelf <span class="brand-badge">v1.0</span></h1>
+            <p class="brand-tagline">Personal Library & AI Reading Manager</p>
+          </div>
+        </div>
         <div class="header-actions">
           <button class="btn-theme" onclick="toggleTheme()" title="Toggle Light/Dark Theme">🌙 Dark</button>
           <button class="btn-logout" onclick="logout()">Log Out</button>
@@ -669,7 +699,6 @@
       }
     }
 
-    // Inicializar estado del tema e iniciar sesión
     applySavedTheme();
     checkSession();
   </script>
