@@ -77,9 +77,11 @@
     }
     .btn-ai:disabled { opacity: 0.6; cursor: not-allowed; }
     .ai-content { font-size: 0.95rem; line-height: 1.6; color: #e0e0e0; }
-    .ai-content h3 { color: #ab47bc; margin-top: 1rem; margin-bottom: 0.3rem; }
-    .ai-content ul { margin-left: 0; list-style: none; display: flex; flex-direction: column; gap: 0.8rem; margin-top: 0.5rem; }
-    .ai-content li { background-color: #121212; padding: 1rem; border-left: 4px solid #8e24aa; border-radius: 4px; }
+    .ai-content h3 { color: #ab47bc; margin-top: 1rem; margin-bottom: 0.5rem; }
+    .ai-content ul { list-style: none !important; display: flex !important; flex-direction: column !important; gap: 12px !important; margin-top: 0.8rem !important; padding-left: 0 !important; }
+    .ai-content li { background-color: #121212 !important; padding: 1rem 1.25rem !important; border-left: 4px solid #8e24aa !important; border-radius: 6px !important; border-top: 1px solid #2a2a2a !important; border-right: 1px solid #2a2a2a !important; border-bottom: 1px solid #2a2a2a !important; }
+    .ai-content li strong { color: #ffffff !important; font-size: 1.05rem !important; display: block !important; margin-bottom: 4px !important; }
+    .ai-content li p { color: #aaaaaa !important; font-size: 0.9rem !important; margin: 4px 0 0 0 !important; }
 
     /* ADD BOOK FORM */
     .add-book-form {
@@ -192,10 +194,11 @@
       padding: 0;
     }
     .list .card-info { flex: 2; }
-    .list h3 { font-size: 1.05rem; }
+    .list .card-info h3 { color: #0088ff !important; margin-bottom: 2px !important; font-size: 1.05rem; }
     .list p { color: #888; font-size: 0.85rem; }
     .list .meta { display: flex; gap: 0.75rem; align-items: center; margin-top: 0; }
     .list form { margin-top: 0 !important; }
+    .list .delete-btn { align-self: center !important; }
 
     .lang-badge { display: inline-block; font-size: 0.7rem; background-color: #2a2a2a; color: #0088ff; padding: 0.15rem 0.4rem; border-radius: 3px; margin-top: 0.3rem; font-weight: bold; }
 
