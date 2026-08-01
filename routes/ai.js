@@ -3,10 +3,9 @@ const router = express.Router();
 const { GoogleGenAI } = require('@google/genai');
 const pool = require('../config/db');
 
-// Explicitly pass the API key from environment variables
+// Explicitly initialize with API key
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
-// Middleware to ensure authentication
 function requireAuth(req, res, next) {
   if (!req.session || !req.session.userId) {
     return res.status(401).json({ error: 'Unauthorized' });
@@ -14,7 +13,6 @@ function requireAuth(req, res, next) {
   next();
 }
 
-// POST endpoint for book recommendations
 router.post('/api/recommendations', requireAuth, async (req, res) => {
   try {
     const result = await pool.query(
@@ -43,13 +41,13 @@ Requirements:
 `;
 
     const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash',
+      model: 'gemini-2.0-flash',
       contents: prompt,
     });
 
     res.json({ recommendations: response.text });
   } catch (err) {
-    console.error('Error generating AI recommendations:', err);
+    console.error('Detailed Gemini Error:', err.message || err);
     res.status(500).json({ error: 'Failed to generate recommendations' });
   }
 });
